@@ -53,17 +53,26 @@ const Network = (() => {
     socket.emit('duel-shoot', data);
   }
 
-  function sendDuelHit(damage, headshot) {
-    socket.emit('duel-hit', { damage, headshot: !!headshot });
+  function sendDuelHit(damage, headshot, shooterHP) {
+    socket.emit('duel-hit', { damage, headshot: !!headshot, shooterHP });
   }
 
-  function sendDuelResult(winner) {
-    socket.emit('duel-result', { winner });
+  function sendDuelResult(winner, winnerHP) {
+    socket.emit('duel-result', { winner, winnerHP });
+  }
+
+  function sendMapChoice(arenaIndex) {
+    socket.emit('duel-map-chosen', { arenaIndex });
+  }
+
+  function emit(event, data) {
+    socket.emit(event, data);
   }
 
   return {
-    on, off,
+    on, off, emit,
     createRoom, joinRoom, startGame,
     sendChessMove, sendDuelState, sendDuelShoot, sendDuelHit, sendDuelResult,
+    sendMapChoice,
   };
 })();

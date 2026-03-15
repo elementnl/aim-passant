@@ -37,7 +37,8 @@ const FPS = (() => {
     const isAttacker = duelInfo.myRole === 'attacker';
     myRole = duelInfo.myRole;
     myStats = isAttacker ? duelInfo.attacker.stats : duelInfo.defender.stats;
-    myHP = myStats.hp;
+    const myCurrentHP = isAttacker ? duelInfo.attacker.currentHP : duelInfo.defender.currentHP;
+    myHP = myCurrentHP !== undefined ? myCurrentHP : myStats.hp;
 
     rebuildArena(duelInfo.arenaIndex);
 
@@ -45,7 +46,12 @@ const FPS = (() => {
     const mySpawn = isAttacker ? duelInfo.spawns.attacker : duelInfo.spawns.defender;
     FPSPlayer.spawn(mySpawn);
     FPSPlayer.setJumpSpeed(myStats.jumpSpeed);
+    const opponentInfo = isAttacker ? duelInfo.defender : duelInfo.attacker;
     FPSOpponent.create(FPSRenderer.getScene(), isAttacker, opponentPiece);
+    FPSOpponent.setHP(
+      opponentInfo.currentHP !== undefined ? opponentInfo.currentHP : opponentInfo.stats.hp,
+      opponentInfo.stats.hp
+    );
     FPSShooting.init(myStats);
     FPSShooting.reset();
     FPSEffects.clear(FPSRenderer.getScene());
@@ -112,6 +118,7 @@ const FPS = (() => {
   }
 
   function handleADSStart() {
+    if (FPSGun.isReloading()) return;
     const wType = myStats.weapon.type;
     if (wType === 'sniper') {
       FPSGun.setADS(true);
@@ -156,6 +163,7 @@ const FPS = (() => {
     FPSGun.updateADS();
     FPSOpponent.interpolate();
     FPSShooting.updateBullets(dt);
+    FPSShooting.updateBloom(dt);
     FPSShooting.updateChargeBar();
     FPSEffects.update(dt);
     FPSHUD.updateHealth(myHP, myStats.hp);
@@ -230,6 +238,7 @@ const FPS = (() => {
   }
 
   function isActive() { return active; }
+  function getMyHP() { return myHP; }
 
-  return { init, startDuel, endDuel, isActive };
+  return { init, startDuel, endDuel, isActive, getMyHP };
 })();

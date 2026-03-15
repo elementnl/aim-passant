@@ -11,6 +11,12 @@ const FPSShooting = (() => {
   let pumpPending = false;
   let boltPending = false;
 
+  let bloom = 0;
+  const BLOOM_PER_SHOT = 0.012;
+  const BLOOM_DECAY_RATE = 0.04;
+  const BLOOM_MAX = 0.06;
+  const BLOOM_WEAPONS = ['pistol', 'ar', 'deagle', 'shotgun'];
+
   const BULLET_SPEED = 80;
   const BULLET_MAX_DIST = 60;
   const BULLET_SIZE = 0.06;
@@ -24,6 +30,7 @@ const FPSShooting = (() => {
     mouseHeld = false;
     pumpPending = false;
     boltPending = false;
+    bloom = 0;
     lastShotTime = 0;
   }
 
@@ -101,6 +108,10 @@ const FPSShooting = (() => {
     FPSGun.recoil();
     FPSHUD.updateAmmo(ammo, maxAmmo);
 
+    if (BLOOM_WEAPONS.includes(weapon.type)) {
+      bloom = Math.min(bloom + BLOOM_PER_SHOT, BLOOM_MAX);
+    }
+
     if (weapon.type === 'shotgun') {
       fireShotgun(camera, opponentMesh, coverMeshes);
       if (ammo > 0) {
@@ -136,9 +147,10 @@ const FPSShooting = (() => {
   function fireBullet(camera, opponentMesh, damage, spread, coverMeshes, aimAssist) {
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
 
-    if (spread > 0) {
-      dir.x += (Math.random() - 0.5) * spread;
-      dir.y += (Math.random() - 0.5) * spread;
+    const totalSpread = spread + (BLOOM_WEAPONS.includes(weapon.type) ? bloom : 0);
+    if (totalSpread > 0) {
+      dir.x += (Math.random() - 0.5) * totalSpread;
+      dir.y += (Math.random() - 0.5) * totalSpread;
       dir.normalize();
     }
 
@@ -159,7 +171,7 @@ const FPSShooting = (() => {
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
     }
 
-    if (spread > 0 && !aimAssist) {
+    if (totalSpread > 0 && !aimAssist) {
       raycaster.set(camera.position, dir);
     }
 
@@ -172,10 +184,11 @@ const FPSShooting = (() => {
       if (hitOpponent) {
         const isHeadshot = checkHeadshot(closest, opponentMesh);
         const finalDamage = isHeadshot ? damage * 2 : damage;
-        Network.sendDuelHit(finalDamage, isHeadshot);
+        Network.sendDuelHit(finalDamage, isHeadshot, FPS.getMyHP());
         showHitMarker(isHeadshot);
         Audio.play(isHeadshot ? 'headshot' : 'hitConfirm');
         FPSOpponent.flashWhite();
+        FPSOpponent.takeDamage(finalDamage);
       } else {
         FPSEffects.spawnImpact(FPSRenderer.getScene(), closest.point);
         FPSArena.damageAt(closest.point, damage);
@@ -217,10 +230,11 @@ const FPSShooting = (() => {
           if (dmg > 0) {
             const isHeadshot = checkHeadshot(closest, opponentMesh);
             const finalDmg = isHeadshot ? dmg * 2 : dmg;
-            Network.sendDuelHit(finalDmg, isHeadshot);
+            Network.sendDuelHit(finalDmg, isHeadshot, FPS.getMyHP());
             showHitMarker(isHeadshot);
             Audio.play(isHeadshot ? 'headshot' : 'hitConfirm');
             FPSOpponent.flashWhite();
+            FPSOpponent.takeDamage(finalDmg);
           }
         } else {
           FPSEffects.spawnImpact(FPSRenderer.getScene(), closest.point);
@@ -362,6 +376,20 @@ const FPSShooting = (() => {
     }, FPSConfig.HIT_MARKER_DURATION);
   }
 
+  function updateBloom(dt) {
+    if (bloom > 0) {
+      bloom = Math.max(0, bloom - BLOOM_DECAY_RATE * dt);
+    }
+    const crosshair = document.getElementById('crosshair');
+    const expandPx = bloom * 600;
+    const baseSize = 24;
+    const newSize = baseSize + expandPx;
+    crosshair.style.width = newSize + 'px';
+    crosshair.style.height = newSize + 'px';
+  }
+
+  function getBloom() { return bloom; }
+
   function reset() {
     lastShotTime = 0;
     isReloading = false;
@@ -369,6 +397,7 @@ const FPSShooting = (() => {
     mouseHeld = false;
     pumpPending = false;
     boltPending = false;
+    bloom = 0;
     for (const b of activeBullets) {
       b.scene.remove(b.mesh);
     }
@@ -381,6 +410,7 @@ const FPSShooting = (() => {
 
   return {
     init, onMouseDown, onMouseUp, onMouseHeld, tryShoot, tryReload, cancelReload,
-    showOpponentTracer, updateBullets, updateChargeBar, reset, getAmmo, getMaxAmmo, isCharging,
+    showOpponentTracer, updateBullets, updateBloom, updateChargeBar, reset,
+    getAmmo, getMaxAmmo, isCharging, getBloom,
   };
 })();

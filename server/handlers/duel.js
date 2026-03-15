@@ -14,9 +14,13 @@ module.exports = function registerDuelHandlers(io, socket) {
     socket.to(room.key).emit('duel-opponent-shoot', data);
   });
 
-  socket.on('duel-hit', ({ damage, headshot }) => {
+  socket.on('duel-hit', ({ damage, headshot, shooterHP }) => {
     const room = rooms.getByPlayer(socket.id);
     if (!room || room.state !== 'duel') return;
+    if (shooterHP !== undefined) {
+      room.lastShooterHP = room.lastShooterHP || {};
+      room.lastShooterHP[socket.id] = shooterHP;
+    }
     socket.to(room.key).emit('duel-take-damage', { damage, headshot });
   });
 
@@ -26,11 +30,16 @@ module.exports = function registerDuelHandlers(io, socket) {
     if (room.duelResolved) return;
     room.duelResolved = true;
 
-    const result = resolveDuel(room, winner, room.pendingMove);
+    const loserSocketId = socket.id;
+    const winnerPlayer = room.players.find(p => p.id !== loserSocketId);
+    const winnerHP = (room.lastShooterHP && winnerPlayer && room.lastShooterHP[winnerPlayer.id]) || 1;
+
+    const result = resolveDuel(room, winner, room.pendingMove, winnerHP);
     room.state = 'chess';
     room.pendingMove = null;
     room.duelInfo = null;
     room.duelResolved = false;
+    room.lastShooterHP = {};
 
     if (result.kingCaptured) {
       room.state = 'gameover';

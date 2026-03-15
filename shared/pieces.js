@@ -1,7 +1,7 @@
 const PIECE_STATS = {
   p: {
     name: 'Pawn',
-    hp: 100,
+    hp: 150,
     speed: 12,
     jumpSpeed: 6,
     weapon: {
@@ -16,7 +16,7 @@ const PIECE_STATS = {
   },
   n: {
     name: 'Knight',
-    hp: 150,
+    hp: 200,
     speed: 12,
     jumpSpeed: 11,
     weapon: {
@@ -34,7 +34,7 @@ const PIECE_STATS = {
   },
   b: {
     name: 'Bishop',
-    hp: 200,
+    hp: 275,
     speed: 7,
     jumpSpeed: 8,
     weapon: {
@@ -54,7 +54,7 @@ const PIECE_STATS = {
   },
   r: {
     name: 'Rook',
-    hp: 250,
+    hp: 350,
     speed: 8,
     jumpSpeed: 9,
     weapon: {
@@ -71,7 +71,7 @@ const PIECE_STATS = {
   },
   q: {
     name: 'Queen',
-    hp: 300,
+    hp: 425,
     speed: 6,
     jumpSpeed: 7,
     weapon: {
@@ -87,7 +87,7 @@ const PIECE_STATS = {
   },
   k: {
     name: 'King',
-    hp: 350,
+    hp: 500,
     speed: 6,
     jumpSpeed: 7,
     weapon: {

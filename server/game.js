@@ -5,7 +5,25 @@ function initChessGame(room) {
   room.chess = new Chess();
   room.state = 'chess';
   room.capturedPieces = { white: [], black: [] };
+  room.pieceHP = initPieceHP(room.chess);
   return getChessState(room);
+}
+
+function initPieceHP(chess) {
+  const hp = {};
+  const squares = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      squares.push(String.fromCharCode(97 + c) + (r + 1));
+    }
+  }
+  for (const sq of squares) {
+    const piece = chess.get(sq);
+    if (piece) {
+      hp[sq] = PIECE_STATS[piece.type].hp;
+    }
+  }
+  return hp;
 }
 
 function getChessState(room) {
@@ -18,6 +36,7 @@ function getChessState(room) {
     isDraw: room.chess.isDraw(),
     isGameOver: room.chess.isGameOver(),
     capturedPieces: room.capturedPieces,
+    pieceHP: room.pieceHP,
   };
 }
 
@@ -38,6 +57,10 @@ function makeMove(room, from, to, promotion) {
     const capturedType = move.captured;
     const capturedColor = movingPiece.color === 'w' ? 'b' : 'w';
     chess.undo();
+
+    const attackerHP = room.pieceHP[from] || PIECE_STATS[movingPiece.type].hp;
+    const defenderHP = room.pieceHP[to] || PIECE_STATS[capturedType].hp;
+
     return {
       duel: true,
       move: { from, to, promotion },
@@ -46,20 +69,25 @@ function makeMove(room, from, to, promotion) {
         color: colorName(movingPiece.color),
         square: from,
         stats: { ...PIECE_STATS[movingPiece.type] },
+        currentHP: attackerHP,
       },
       defender: {
         piece: capturedType,
         color: colorName(capturedColor),
         square: to,
         stats: { ...PIECE_STATS[capturedType] },
+        currentHP: defenderHP,
       },
     };
   }
 
+  room.pieceHP[to] = room.pieceHP[from];
+  delete room.pieceHP[from];
+
   return { duel: false, move, state: getChessState(room) };
 }
 
-function resolveDuel(room, winner, pendingMove) {
+function resolveDuel(room, winner, pendingMove, winnerHP) {
   const chess = room.chess;
   const { from, to, promotion } = pendingMove;
   const attackerPiece = chess.get(from);
@@ -72,9 +100,11 @@ function resolveDuel(room, winner, pendingMove) {
       if (defenderPiece) {
         room.capturedPieces[colorName(defenderPiece.color)].push(defenderPiece.type);
       }
+      delete room.pieceHP[to];
+      room.pieceHP[to] = winnerHP;
       return {
         winner: 'attacker',
-        state: { fen: chess.fen(), turn: colorName(chess.turn()), capturedPieces: room.capturedPieces },
+        state: { fen: chess.fen(), turn: colorName(chess.turn()), capturedPieces: room.capturedPieces, pieceHP: room.pieceHP },
         kingCaptured: true,
         capturedKingColor: colorName(defenderPiece.color),
       };
@@ -84,6 +114,9 @@ function resolveDuel(room, winner, pendingMove) {
     if (defenderPiece) {
       room.capturedPieces[colorName(defenderPiece.color)].push(defenderPiece.type);
     }
+    delete room.pieceHP[from];
+    room.pieceHP[to] = winnerHP;
+
     return {
       winner: 'attacker',
       state: getChessState(room),
@@ -98,9 +131,11 @@ function resolveDuel(room, winner, pendingMove) {
     if (attackerPiece) {
       room.capturedPieces[colorName(attackerPiece.color)].push(attackerPiece.type);
     }
+    delete room.pieceHP[from];
+    room.pieceHP[to] = winnerHP;
     return {
       winner: 'defender',
-      state: { fen: chess.fen(), turn: colorName(chess.turn()), capturedPieces: room.capturedPieces },
+      state: { fen: chess.fen(), turn: colorName(chess.turn()), capturedPieces: room.capturedPieces, pieceHP: room.pieceHP },
       kingCaptured: true,
       capturedKingColor: colorName(attackerPiece.color),
     };
@@ -110,6 +145,8 @@ function resolveDuel(room, winner, pendingMove) {
   if (attackerPiece) {
     room.capturedPieces[colorName(attackerPiece.color)].push(attackerPiece.type);
   }
+  delete room.pieceHP[from];
+  room.pieceHP[to] = winnerHP;
 
   const fen = chess.fen();
   const parts = fen.split(' ');

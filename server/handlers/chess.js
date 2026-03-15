@@ -19,15 +19,23 @@ module.exports = function registerChessHandlers(io, socket) {
       room.pendingMove = result.move;
       room.duelInfo = { attacker: result.attacker, defender: result.defender };
 
-      const arenaIndex = Math.floor(Math.random() * getArenaCount());
-      const spawns = generateSpawns(arenaIndex);
+      const attackerPlayer = room.players.find(p => p.color === result.attacker.color);
+      const defenderPlayer = room.players.find(p => p.color === result.defender.color);
 
-      io.to(room.key).emit('duel-start', {
-        attacker: result.attacker,
-        defender: result.defender,
-        spawns,
-        arenaIndex,
-      });
+      if (attackerPlayer) {
+        io.to(attackerPlayer.id).emit('duel-map-select', {
+          attacker: result.attacker,
+          defender: result.defender,
+          arenaCount: getArenaCount(),
+        });
+      }
+      if (defenderPlayer) {
+        io.to(defenderPlayer.id).emit('duel-waiting-select', {
+          attacker: result.attacker,
+          defender: result.defender,
+        });
+      }
+
       callback({ ok: true, duel: true });
     } else {
       io.to(room.key).emit('chess-update', result.state);
@@ -41,5 +49,20 @@ module.exports = function registerChessHandlers(io, socket) {
         });
       }
     }
+  });
+
+  socket.on('duel-map-chosen', ({ arenaIndex }) => {
+    const room = rooms.getByPlayer(socket.id);
+    if (!room || room.state !== 'duel' || !room.duelInfo) return;
+
+    const safeIndex = Math.max(0, Math.min(arenaIndex, getArenaCount() - 1));
+    const spawns = generateSpawns(safeIndex);
+
+    io.to(room.key).emit('duel-start', {
+      attacker: room.duelInfo.attacker,
+      defender: room.duelInfo.defender,
+      spawns,
+      arenaIndex: safeIndex,
+    });
   });
 };
