@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aim Passant</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="screen-lobby" class="screen active">
+    <div class="lobby-container">
+      <h1 class="title">AIM PASSANT</h1>
+      <p class="subtitle">FPS Chess in Your Browser</p>
+      <div class="lobby-actions">
+        <div class="lobby-section">
+          <button id="btn-create" class="btn btn-primary">Create Room</button>
+          <div id="create-options" class="hidden">
+            <input type="password" id="input-password-create" placeholder="Password (optional)" class="input">
+            <button id="btn-create-confirm" class="btn">Create</button>
+          </div>
+        </div>
+        <div class="divider">or</div>
+        <div class="lobby-section">
+          <button id="btn-join" class="btn btn-primary">Join Room</button>
+          <div id="join-options" class="hidden">
+            <input type="text" id="input-room-code" placeholder="Room Code" class="input" maxlength="5" style="text-transform:uppercase">
+            <input type="password" id="input-password-join" placeholder="Password (if any)" class="input">
+            <button id="btn-join-confirm" class="btn">Join</button>
+          </div>
+        </div>
+      </div>
+      <p id="lobby-error" class="error hidden"></p>
+    </div>
+  </div>
+
+  <div id="screen-waiting" class="screen">
+    <div class="lobby-container">
+      <h1 class="title">AIM PASSANT</h1>
+      <div class="room-info">
+        <p>Room Code: <span id="room-code" class="room-code"></span></p>
+        <p id="waiting-status">Waiting for opponent...</p>
+      </div>
+      <p id="player-color" class="player-color"></p>
+      <button id="btn-start" class="btn btn-primary hidden">Start Game</button>
+    </div>
+  </div>
+
+  <div id="screen-chess" class="screen">
+    <div class="chess-container">
+      <div id="turn-indicator" class="turn-indicator"></div>
+      <div id="captured-white" class="captured-pieces"></div>
+      <div id="chess-board" class="chess-board"></div>
+      <div id="captured-black" class="captured-pieces"></div>
+    </div>
+  </div>
+
+  <div id="screen-duel" class="screen">
+    <div id="duel-info" class="duel-info">
+      <span id="duel-attacker"></span>
+      <span class="vs">VS</span>
+      <span id="duel-defender"></span>
+    </div>
+    <div id="duel-countdown" class="duel-countdown hidden"></div>
+    <canvas id="duel-canvas"></canvas>
+    <div id="crosshair" class="crosshair">
+      <div class="crosshair-line crosshair-top"></div>
+      <div class="crosshair-line crosshair-right"></div>
+      <div class="crosshair-line crosshair-bottom"></div>
+      <div class="crosshair-line crosshair-left"></div>
+      <div class="crosshair-dot"></div>
+    </div>
+    <div id="duel-hud" class="duel-hud">
+      <div class="hud-health">
+        <div id="health-bar" class="health-bar">
+          <div id="health-fill" class="health-fill"></div>
+        </div>
+        <span id="health-text">100</span>
+      </div>
+      <div id="weapon-info" class="weapon-info"></div>
+    </div>
+  </div>
+
+  <div id="screen-gameover" class="screen">
+    <div class="lobby-container">
+      <h1 id="gameover-title" class="title"></h1>
+      <p id="gameover-reason"></p>
+      <button id="btn-back-lobby" class="btn btn-primary">Back to Lobby</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/lib/chess.js"></script>
+  <script src="/shared/pieces.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/lobby.js"></script>
+  <script src="js/chess.js"></script>
+  <script src="js/fps/constants.js"></script>
+  <script src="js/fps/input.js"></script>
+  <script src="js/fps/renderer.js"></script>
+  <script src="js/fps/arena.js"></script>
+  <script src="js/fps/player.js"></script>
+  <script src="js/fps/opponent.js"></script>
+  <script src="js/fps/gun.js"></script>
+  <script src="js/fps/shooting.js"></script>
+  <script src="js/fps/hud.js"></script>
+  <script src="js/fps/index.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

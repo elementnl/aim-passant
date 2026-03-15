@@ -1,0 +1,385 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #f5f5f5;
+  color: #222;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+.screen {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.screen.active {
+  display: flex;
+}
+
+.hidden { display: none !important; }
+
+/* Lobby */
+.lobby-container {
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.title {
+  font-size: 3rem;
+  color: #222;
+  margin-bottom: 0.25rem;
+  letter-spacing: 4px;
+  font-weight: bold;
+}
+
+.subtitle {
+  color: #999;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+}
+
+.lobby-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lobby-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.divider {
+  color: #aaa;
+  font-size: 0.8rem;
+}
+
+.btn {
+  background: #fff;
+  color: #222;
+  border: 2px solid #222;
+  padding: 0.75rem 1.5rem;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn:hover {
+  background: #222;
+  color: #fff;
+}
+
+.btn-primary {
+  background: #222;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #444;
+}
+
+.input {
+  background: #fff;
+  color: #222;
+  border: 2px solid #ddd;
+  padding: 0.6rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #222;
+}
+
+.error {
+  color: #c0392b;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+}
+
+.room-code {
+  font-size: 2rem;
+  color: #222;
+  letter-spacing: 6px;
+  font-weight: bold;
+}
+
+.room-info {
+  margin: 1.5rem 0;
+}
+
+.player-color {
+  margin: 1rem 0;
+  font-size: 1.1rem;
+}
+
+#waiting-status {
+  color: #888;
+  margin-top: 0.5rem;
+}
+
+/* Chess Board */
+.chess-container {
+  --board-size: min(85vmin, 560px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+.turn-indicator {
+  font-size: 1.1rem;
+  padding: 0.4rem 1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  color: #222;
+}
+
+.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, calc(var(--board-size) / 8));
+  grid-template-rows: repeat(8, calc(var(--board-size) / 8));
+  border: 2px solid #222;
+}
+
+.chess-square {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--board-size) / 8);
+  height: calc(var(--board-size) / 8);
+  font-size: calc(var(--board-size) / 14);
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  line-height: 1;
+}
+
+.chess-square.light {
+  background: #f0d9b5;
+}
+
+.chess-square.dark {
+  background: #b58863;
+}
+
+.chess-square .piece-white {
+  color: #fff;
+  text-shadow:
+    -1px -1px 0 #333,
+    1px -1px 0 #333,
+    -1px 1px 0 #333,
+    1px 1px 0 #333;
+}
+
+.chess-square .piece-black {
+  color: #333;
+  text-shadow: none;
+}
+
+.chess-square.selected {
+  background: #f7ec5a !important;
+}
+
+.chess-square.valid-move::after {
+  content: '';
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+}
+
+.chess-square.valid-capture {
+  box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.25);
+}
+
+.captured-pieces {
+  font-size: 1.1rem;
+  min-height: 1.5rem;
+  display: flex;
+  gap: 0.15rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  color: #555;
+}
+
+/* FPS Duel */
+#duel-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.duel-info {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 1.1rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+}
+
+.vs {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.duel-countdown {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  font-size: 6rem;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+}
+
+.duel-hud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.hud-health {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.health-bar {
+  width: 200px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.health-fill {
+  height: 100%;
+  background: #2ecc71;
+  width: 100%;
+  transition: width 0.15s;
+}
+
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.crosshair-line {
+  position: absolute;
+  background: #fff;
+  box-shadow: 0 0 2px rgba(0,0,0,0.8);
+}
+
+.crosshair-top {
+  width: 2px;
+  height: 8px;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.crosshair-bottom {
+  width: 2px;
+  height: 8px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.crosshair-left {
+  width: 8px;
+  height: 2px;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.crosshair-right {
+  width: 8px;
+  height: 2px;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.crosshair-dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #fff;
+  box-shadow: 0 0 2px rgba(0,0,0,0.8);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.crosshair.hit .crosshair-line,
+.crosshair.hit .crosshair-dot {
+  background: #e74c3c;
+}
+
+.weapon-info {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* Game Over */
+#screen-gameover .title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+#gameover-reason {
+  color: #888;
+  margin-bottom: 2rem;
+}
