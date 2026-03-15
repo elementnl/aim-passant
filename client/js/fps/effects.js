@@ -70,5 +70,37 @@ const FPSEffects = (() => {
     return (r << 16) | (g << 8) | b;
   }
 
-  return { explode, update, clear };
+  function spawnImpact(scene, position) {
+    const count = 4;
+    for (let i = 0; i < count; i++) {
+      const size = 0.03 + Math.random() * 0.04;
+      const geo = new THREE.BoxGeometry(size, size, size);
+      const color = Math.random() > 0.5 ? 0xffcc44 : 0xaaaaaa;
+      const mat = new THREE.MeshBasicMaterial({ color });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.copy(position);
+
+      const velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 3,
+        Math.random() * 2 + 1,
+        (Math.random() - 0.5) * 3
+      );
+
+      scene.add(mesh);
+      particles.push({
+        mesh,
+        velocity,
+        life: 0.4,
+        decay: 1.5 + Math.random(),
+        scene,
+        rotSpeed: new THREE.Vector3(
+          (Math.random() - 0.5) * 15,
+          (Math.random() - 0.5) * 15,
+          (Math.random() - 0.5) * 15
+        ),
+      });
+    }
+  }
+
+  return { explode, spawnImpact, update, clear };
 })();

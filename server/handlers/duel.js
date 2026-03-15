@@ -14,10 +14,10 @@ module.exports = function registerDuelHandlers(io, socket) {
     socket.to(room.key).emit('duel-opponent-shoot', data);
   });
 
-  socket.on('duel-hit', ({ damage }) => {
+  socket.on('duel-hit', ({ damage, headshot }) => {
     const room = rooms.getByPlayer(socket.id);
     if (!room || room.state !== 'duel') return;
-    socket.to(room.key).emit('duel-take-damage', { damage });
+    socket.to(room.key).emit('duel-take-damage', { damage, headshot });
   });
 
   socket.on('duel-result', ({ winner }) => {

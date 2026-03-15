@@ -3,8 +3,13 @@ const FPSPlayer = (() => {
   const velocity = new THREE.Vector3();
   const rotation = { yaw: 0, pitch: 0 };
   let onGround = true;
+  let jumpSpeed = FPSConfig.JUMP_SPEED;
 
   const PLAYER_RADIUS = 0.3;
+  const FOOTSTEP_INTERVAL = 0.35;
+  let footstepTimer = 0;
+  let footstepIndex = 0;
+  const FOOTSTEP_SOUNDS = ['footstep1', 'footstep2', 'footstep3', 'footstep4'];
 
   function spawn(spawnData) {
     position.set(spawnData.x, FPSConfig.PLAYER_HEIGHT, spawnData.z);
@@ -12,6 +17,11 @@ const FPSPlayer = (() => {
     velocity.set(0, 0, 0);
     rotation.pitch = 0;
     onGround = true;
+    footstepTimer = 0;
+  }
+
+  function setJumpSpeed(js) {
+    jumpSpeed = js;
   }
 
   function collidesWithCover(x, y, z) {
@@ -45,7 +55,7 @@ const FPSPlayer = (() => {
   }
 
   function update(dt, speed) {
-    const { GRAVITY, JUMP_SPEED, ARENA_SIZE, PLAYER_HEIGHT, MOUSE_SENSITIVITY, PITCH_LIMIT } = FPSConfig;
+    const { GRAVITY, ARENA_SIZE, PLAYER_HEIGHT, MOUSE_SENSITIVITY, PITCH_LIMIT } = FPSConfig;
 
     const forward = new THREE.Vector3(-Math.sin(rotation.yaw), 0, -Math.cos(rotation.yaw));
     const right = new THREE.Vector3(Math.cos(rotation.yaw), 0, -Math.sin(rotation.yaw));
@@ -55,13 +65,14 @@ const FPSPlayer = (() => {
     if (FPSInput.isDown('s') || FPSInput.isDown('arrowdown'))  moveDir.sub(forward);
     if (FPSInput.isDown('d') || FPSInput.isDown('arrowright')) moveDir.add(right);
     if (FPSInput.isDown('a') || FPSInput.isDown('arrowleft'))  moveDir.sub(right);
-    if (moveDir.lengthSq() > 0) moveDir.normalize();
+    const isMoving = moveDir.lengthSq() > 0;
+    if (isMoving) moveDir.normalize();
 
     velocity.x = moveDir.x * speed;
     velocity.z = moveDir.z * speed;
 
     if (FPSInput.isDown(' ') && onGround) {
-      velocity.y = JUMP_SPEED;
+      velocity.y = jumpSpeed;
       onGround = false;
     }
     velocity.y += GRAVITY * dt;
@@ -101,6 +112,17 @@ const FPSPlayer = (() => {
       }
     }
 
+    if (isMoving && onGround) {
+      footstepTimer -= dt;
+      if (footstepTimer <= 0) {
+        footstepTimer = FOOTSTEP_INTERVAL;
+        Audio.play(FOOTSTEP_SOUNDS[footstepIndex]);
+        footstepIndex = (footstepIndex + 1) % FOOTSTEP_SOUNDS.length;
+      }
+    } else {
+      footstepTimer = 0;
+    }
+
     const mouse = FPSInput.consumeMouse();
     rotation.yaw -= mouse.x * MOUSE_SENSITIVITY;
     rotation.pitch -= mouse.y * MOUSE_SENSITIVITY;
@@ -121,5 +143,7 @@ const FPSPlayer = (() => {
     };
   }
 
-  return { spawn, update, applyToCamera, getState, position, rotation };
+  function isOnGround() { return onGround; }
+
+  return { spawn, setJumpSpeed, update, applyToCamera, getState, isOnGround, position, rotation };
 })();

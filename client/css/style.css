@@ -230,25 +230,80 @@ body {
   display: block;
 }
 
-.duel-info {
+/* Intro Screen */
+.duel-intro {
   position: absolute;
-  top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 30;
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
-  gap: 1rem;
   align-items: center;
-  font-size: 1.1rem;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  padding: 0.5rem 1.5rem;
-  border-radius: 4px;
+  justify-content: center;
+  pointer-events: none;
 }
 
-.vs {
+.intro-content {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  animation: introSlideIn 0.5s ease-out;
+}
+
+@keyframes introSlideIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.intro-left, .intro-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 140px;
+}
+
+.intro-piece {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.intro-name {
+  font-size: 1.4rem;
+  color: #fff;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.intro-weapon {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.intro-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.intro-vs {
+  font-size: 3rem;
   color: #e74c3c;
   font-weight: bold;
+  letter-spacing: 4px;
+  text-shadow: 0 0 30px rgba(231, 76, 60, 0.5);
+}
+
+.intro-map {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 3px;
 }
 
 .duel-countdown {
@@ -263,6 +318,7 @@ body {
   font-weight: bold;
 }
 
+/* HUD */
 .duel-hud {
   position: absolute;
   bottom: 0;
@@ -272,23 +328,30 @@ body {
   pointer-events: none;
 }
 
-.hud-health {
+.hud-left {
   position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 1.5rem;
+  left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.hud-health {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
 .health-bar {
-  width: 200px;
-  height: 16px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  width: 180px;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 2px;
 }
 
@@ -297,8 +360,54 @@ body {
   background: #2ecc71;
   width: 100%;
   transition: width 0.15s;
+  border-radius: 1px;
 }
 
+.hud-right {
+  position: absolute;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+
+.weapon-info {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hud-ammo-block {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.ammo-count {
+  font-size: 1.8rem;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.reload-indicator {
+  font-size: 0.75rem;
+  color: #f1c40f;
+  font-weight: bold;
+  letter-spacing: 1px;
+  animation: reloadBlink 0.6s ease-in-out infinite;
+}
+
+@keyframes reloadBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Crosshair */
 .crosshair {
   position: absolute;
   top: 50%;
@@ -317,45 +426,35 @@ body {
 }
 
 .crosshair-top {
-  width: 2px;
-  height: 8px;
-  top: 0;
-  left: 50%;
+  width: 2px; height: 8px;
+  top: 0; left: 50%;
   transform: translateX(-50%);
 }
 
 .crosshair-bottom {
-  width: 2px;
-  height: 8px;
-  bottom: 0;
-  left: 50%;
+  width: 2px; height: 8px;
+  bottom: 0; left: 50%;
   transform: translateX(-50%);
 }
 
 .crosshair-left {
-  width: 8px;
-  height: 2px;
-  left: 0;
-  top: 50%;
+  width: 8px; height: 2px;
+  left: 0; top: 50%;
   transform: translateY(-50%);
 }
 
 .crosshair-right {
-  width: 8px;
-  height: 2px;
-  right: 0;
-  top: 50%;
+  width: 8px; height: 2px;
+  right: 0; top: 50%;
   transform: translateY(-50%);
 }
 
 .crosshair-dot {
   position: absolute;
-  width: 2px;
-  height: 2px;
+  width: 2px; height: 2px;
   background: #fff;
   box-shadow: 0 0 2px rgba(0,0,0,0.8);
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
 }
 
@@ -364,18 +463,87 @@ body {
   background: #e74c3c;
 }
 
+.crosshair.headshot .crosshair-line,
+.crosshair.headshot .crosshair-dot {
+  background: #ff0000;
+}
+
+/* Scope Overlays */
+.scope-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 14;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 20%, rgba(0,0,0,0.95) 45%);
+}
+
+.scope-overlay::before,
+.scope-overlay::after {
+  content: '';
+  position: absolute;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.scope-overlay::before {
+  width: 1px; height: 100%;
+  left: 50%; top: 0;
+}
+
+.scope-overlay::after {
+  width: 100%; height: 1px;
+  top: 50%; left: 0;
+}
+
+.reddot-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 14;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.15) 100%);
+}
+
+.reddot-dot {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px; height: 4px;
+  background: #ff0000;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #ff0000, 0 0 2px #ff0000;
+}
+
+/* Charge Bar */
+.charge-bar-container {
+  position: absolute;
+  bottom: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px; height: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  z-index: 16;
+  pointer-events: none;
+}
+
+.charge-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(to right, #f1c40f, #e74c3c);
+  transition: width 0.05s;
+}
+
+/* Reload Spinner */
 .reload-spinner {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   z-index: 16;
   pointer-events: none;
 }
 
 .spinner-ring {
-  width: 36px;
-  height: 36px;
+  width: 36px; height: 36px;
   border: 3px solid rgba(255, 255, 255, 0.2);
   border-top-color: #fff;
   border-radius: 50%;
@@ -386,10 +554,10 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Duel Result */
 .duel-result {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   z-index: 25;
   font-size: 4rem;
@@ -399,41 +567,8 @@ body {
   pointer-events: none;
 }
 
-.duel-result-win {
-  color: #2ecc71;
-}
-
-.duel-result-loss {
-  color: #e74c3c;
-}
-
-.hud-ammo {
-  position: absolute;
-  bottom: 2rem;
-  left: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 1.2rem;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-  font-weight: bold;
-}
-
-.reload-indicator {
-  font-size: 0.85rem;
-  color: #f1c40f;
-  font-weight: normal;
-}
-
-.weapon-info {
-  position: absolute;
-  bottom: 2rem;
-  right: 2rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
+.duel-result-win { color: #2ecc71; }
+.duel-result-loss { color: #e74c3c; }
 
 /* Game Over */
 #screen-gameover .title {

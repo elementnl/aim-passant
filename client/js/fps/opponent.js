@@ -1,5 +1,6 @@
 const FPSOpponent = (() => {
   let mesh = null;
+  let originalMaterials = [];
   const currentPos = new THREE.Vector3();
   const targetPos = new THREE.Vector3();
   const rot = { yaw: 0 };
@@ -9,13 +10,29 @@ const FPSOpponent = (() => {
 
     const color = isAttacker ? 0x4488ff : 0xff4444;
     mesh = FPSModels.createPieceModel(pieceType || 'p', color);
+    originalMaterials = [];
     mesh.traverse(child => {
       if (child.isMesh) {
         child.castShadow = true;
+        originalMaterials.push({ mesh: child, material: child.material });
       }
     });
 
     scene.add(mesh);
+  }
+
+  function flashWhite() {
+    if (!mesh) return;
+    const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    mesh.traverse(child => {
+      if (child.isMesh) child.material = whiteMat;
+    });
+    setTimeout(() => {
+      if (!mesh) return;
+      originalMaterials.forEach(({ mesh: m, material }) => {
+        m.material = material;
+      });
+    }, 80);
   }
 
   function updateFromNetwork(data) {
@@ -36,8 +53,9 @@ const FPSOpponent = (() => {
     if (mesh) {
       scene.remove(mesh);
       mesh = null;
+      originalMaterials = [];
     }
   }
 
-  return { create, updateFromNetwork, interpolate, getMesh, destroy };
+  return { create, flashWhite, updateFromNetwork, interpolate, getMesh, destroy };
 })();

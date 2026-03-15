@@ -56,10 +56,23 @@
   </div>
 
   <div id="screen-duel" class="screen">
-    <div id="duel-info" class="duel-info">
-      <span id="duel-attacker"></span>
-      <span class="vs">VS</span>
-      <span id="duel-defender"></span>
+    <div id="duel-intro" class="duel-intro hidden">
+      <div class="intro-content">
+        <div class="intro-left">
+          <div id="intro-attacker-piece" class="intro-piece"></div>
+          <div id="intro-attacker-name" class="intro-name"></div>
+          <div id="intro-attacker-weapon" class="intro-weapon"></div>
+        </div>
+        <div class="intro-center">
+          <div class="intro-vs">VS</div>
+          <div id="intro-map-name" class="intro-map"></div>
+        </div>
+        <div class="intro-right">
+          <div id="intro-defender-piece" class="intro-piece"></div>
+          <div id="intro-defender-name" class="intro-name"></div>
+          <div id="intro-defender-weapon" class="intro-weapon"></div>
+        </div>
+      </div>
     </div>
     <div id="duel-countdown" class="duel-countdown hidden"></div>
     <canvas id="duel-canvas"></canvas>
@@ -70,22 +83,33 @@
       <div class="crosshair-line crosshair-left"></div>
       <div class="crosshair-dot"></div>
     </div>
+    <div id="scope-overlay" class="scope-overlay hidden"></div>
+    <div id="reddot-overlay" class="reddot-overlay hidden">
+      <div class="reddot-dot"></div>
+    </div>
+    <div id="charge-bar-container" class="charge-bar-container hidden">
+      <div id="charge-fill" class="charge-fill"></div>
+    </div>
     <div id="reload-spinner" class="reload-spinner hidden">
       <div class="spinner-ring"></div>
     </div>
     <div id="duel-result" class="duel-result hidden"></div>
     <div id="duel-hud" class="duel-hud">
-      <div class="hud-health">
-        <div id="health-bar" class="health-bar">
-          <div id="health-fill" class="health-fill"></div>
+      <div class="hud-left">
+        <div class="hud-health">
+          <div id="health-bar" class="health-bar">
+            <div id="health-fill" class="health-fill"></div>
+          </div>
+          <span id="health-text">100</span>
         </div>
-        <span id="health-text">100</span>
       </div>
-      <div class="hud-ammo">
-        <span id="ammo-text">12 / 12</span>
-        <span id="reload-indicator" class="reload-indicator hidden">[R] RELOADING</span>
+      <div class="hud-right">
+        <div id="weapon-info" class="weapon-info"></div>
+        <div class="hud-ammo-block">
+          <span id="ammo-text" class="ammo-count">12 / 12</span>
+          <span id="reload-indicator" class="reload-indicator hidden">[R] RELOAD</span>
+        </div>
       </div>
-      <div id="weapon-info" class="weapon-info"></div>
     </div>
   </div>
 

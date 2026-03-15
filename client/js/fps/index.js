@@ -7,66 +7,135 @@ const FPS = (() => {
   let syncInterval = null;
   let lastTime = 0;
   let dying = false;
+  let mouseDown = false;
 
   let coverMeshes = [];
 
   function init() {
     const canvas = document.getElementById('duel-canvas');
     FPSRenderer.init(canvas);
-    coverMeshes = FPSArena.build(FPSRenderer.getScene());
     FPSInput.bind(canvas);
+  }
+
+  function rebuildArena(arenaIndex) {
+    const scene = FPSRenderer.getScene();
+    const toRemove = [];
+    scene.traverse(child => {
+      if (child.isMesh && !child.parent?.isCamera && child.parent === scene) {
+        toRemove.push(child);
+      }
+    });
+    toRemove.forEach(m => scene.remove(m));
+    coverMeshes = FPSArena.build(scene, arenaIndex);
   }
 
   function startDuel(duelInfo) {
     active = true;
     duelReady = false;
     dying = false;
+    mouseDown = false;
     const isAttacker = duelInfo.myRole === 'attacker';
     myRole = duelInfo.myRole;
     myStats = isAttacker ? duelInfo.attacker.stats : duelInfo.defender.stats;
     myHP = myStats.hp;
 
+    rebuildArena(duelInfo.arenaIndex);
+
     const opponentPiece = isAttacker ? duelInfo.defender.piece : duelInfo.attacker.piece;
     const mySpawn = isAttacker ? duelInfo.spawns.attacker : duelInfo.spawns.defender;
     FPSPlayer.spawn(mySpawn);
+    FPSPlayer.setJumpSpeed(myStats.jumpSpeed);
     FPSOpponent.create(FPSRenderer.getScene(), isAttacker, opponentPiece);
+    FPSShooting.init(myStats);
     FPSShooting.reset();
     FPSEffects.clear(FPSRenderer.getScene());
     FPSGun.destroy();
-    FPSGun.create(FPSRenderer.getCamera());
+    FPSGun.create(FPSRenderer.getCamera(), myStats.weapon.type);
 
     FPSHUD.updateHealth(myHP, myStats.hp);
-    FPSHUD.updateAmmo(FPSShooting.getMaxAmmo(), FPSShooting.getMaxAmmo());
+    FPSHUD.updateAmmo(FPSShooting.getAmmo(), FPSShooting.getMaxAmmo());
     FPSHUD.showReloading(false);
+    FPSHUD.showChargeBar(false);
+    FPSHUD.showScope(false);
     FPSHUD.setWeaponInfo(myStats);
 
     const canvas = document.getElementById('duel-canvas');
-    const onCanvasClick = () => {
-      if (dying) return;
-      if (FPSInput.isPointerLocked()) {
-        FPSShooting.tryShoot(FPSRenderer.getCamera(), FPSOpponent.getMesh(), myStats, coverMeshes);
-      } else {
+
+    const onMouseDown = (e) => {
+      if (dying || !duelReady) return;
+      if (!FPSInput.isPointerLocked()) {
         FPSInput.requestPointerLock();
+        return;
+      }
+      if (e.button === 0) {
+        mouseDown = true;
+        FPSShooting.onMouseDown(FPSRenderer.getCamera(), FPSOpponent.getMesh(), myStats, coverMeshes);
+      } else if (e.button === 2) {
+        handleADSStart();
       }
     };
-    canvas.addEventListener('click', onCanvasClick);
-    canvas._duelClickHandler = onCanvasClick;
 
-    FPSInput.requestPointerLock();
+    const onMouseUp = (e) => {
+      if (e.button === 0) {
+        mouseDown = false;
+        FPSShooting.onMouseUp(FPSRenderer.getCamera(), FPSOpponent.getMesh(), myStats, coverMeshes);
+      } else if (e.button === 2) {
+        handleADSEnd();
+      }
+    };
+
+    const onContextMenu = (e) => e.preventDefault();
+
+    canvas.addEventListener('mousedown', onMouseDown);
+    canvas.addEventListener('mouseup', onMouseUp);
+    canvas.addEventListener('contextmenu', onContextMenu);
+    canvas._duelHandlers = { onMouseDown, onMouseUp, onContextMenu };
 
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
 
-    FPSHUD.showCountdown(() => {
-      duelReady = true;
-      syncInterval = setInterval(() => {
-        if (active && !dying) Network.sendDuelState(FPSPlayer.getState());
-      }, FPSConfig.SYNC_RATE);
+    FPSHUD.showIntro(duelInfo.attacker, duelInfo.defender, duelInfo.arenaIndex, () => {
+      FPSInput.requestPointerLock();
+      FPSHUD.showCountdown(() => {
+        duelReady = true;
+        syncInterval = setInterval(() => {
+          if (active && !dying) Network.sendDuelState(FPSPlayer.getState());
+        }, FPSConfig.SYNC_RATE);
+      });
     });
 
     Network.on('duel-opponent-state', (data) => FPSOpponent.updateFromNetwork(data));
-    Network.on('duel-opponent-shoot', (data) => FPSShooting.showOpponentTracer(FPSRenderer.getScene(), data));
+    Network.on('duel-opponent-shoot', (data) => {
+      FPSShooting.showOpponentTracer(FPSRenderer.getScene(), data);
+    });
     Network.on('duel-take-damage', onTakeDamage);
+  }
+
+  function handleADSStart() {
+    const wType = myStats.weapon.type;
+    if (wType === 'sniper') {
+      FPSGun.setADS(true);
+      FPSHUD.showScope(true, 'sniper');
+      Audio.play('sniperScope');
+      FPSRenderer.setFOV(30);
+    } else if (wType === 'ar') {
+      FPSGun.setADS(true);
+      FPSHUD.showScope(true, 'reddot');
+      FPSRenderer.setFOV(60);
+    } else if (wType === 'deagle') {
+      FPSGun.setADS(true);
+      FPSRenderer.setFOV(70);
+    }
+  }
+
+  function handleADSEnd() {
+    const wType = myStats.weapon.type;
+    if (wType === 'sniper' || wType === 'ar' || wType === 'deagle') {
+      FPSGun.setADS(false);
+      FPSHUD.showScope(false);
+      FPSRenderer.setFOV(90);
+      if (wType === 'sniper') Audio.play('sniperScope');
+    }
   }
 
   function gameLoop(now) {
@@ -78,11 +147,16 @@ const FPS = (() => {
     if (duelReady && !dying) {
       FPSPlayer.update(dt, myStats.speed);
       if (FPSInput.isDown('r')) FPSShooting.tryReload();
+      if (mouseDown) {
+        FPSShooting.onMouseHeld(FPSRenderer.getCamera(), FPSOpponent.getMesh(), myStats, coverMeshes);
+      }
     }
 
     FPSPlayer.applyToCamera(FPSRenderer.getCamera());
+    FPSGun.updateADS();
     FPSOpponent.interpolate();
     FPSShooting.updateBullets(dt);
+    FPSShooting.updateChargeBar();
     FPSEffects.update(dt);
     FPSHUD.updateHealth(myHP, myStats.hp);
     FPSRenderer.render();
@@ -90,7 +164,7 @@ const FPS = (() => {
     requestAnimationFrame(gameLoop);
   }
 
-  function onTakeDamage({ damage }) {
+  function onTakeDamage({ damage, headshot }) {
     myHP -= damage;
     FPSHUD.flashDamage();
     Audio.play('damage');
@@ -127,11 +201,18 @@ const FPS = (() => {
     syncInterval = null;
     duelReady = false;
     dying = false;
+    mouseDown = false;
+
+    FPSHUD.showScope(false);
+    FPSHUD.showChargeBar(false);
+    FPSRenderer.setFOV(90);
 
     const canvas = document.getElementById('duel-canvas');
-    if (canvas._duelClickHandler) {
-      canvas.removeEventListener('click', canvas._duelClickHandler);
-      delete canvas._duelClickHandler;
+    if (canvas._duelHandlers) {
+      canvas.removeEventListener('mousedown', canvas._duelHandlers.onMouseDown);
+      canvas.removeEventListener('mouseup', canvas._duelHandlers.onMouseUp);
+      canvas.removeEventListener('contextmenu', canvas._duelHandlers.onContextMenu);
+      delete canvas._duelHandlers;
     }
 
     FPSGun.destroy();

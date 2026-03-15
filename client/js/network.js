@@ -53,8 +53,8 @@ const Network = (() => {
     socket.emit('duel-shoot', data);
   }
 
-  function sendDuelHit(damage) {
-    socket.emit('duel-hit', { damage });
+  function sendDuelHit(damage, headshot) {
+    socket.emit('duel-hit', { damage, headshot: !!headshot });
   }
 
   function sendDuelResult(winner) {

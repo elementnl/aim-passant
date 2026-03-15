@@ -49,8 +49,13 @@ const FPSRenderer = (() => {
     renderer.render(scene, camera);
   }
 
+  function setFOV(fov) {
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+  }
+
   function getScene() { return scene; }
   function getCamera() { return camera; }
 
-  return { init, render, getScene, getCamera };
+  return { init, render, setFOV, getScene, getCamera };
 })();

@@ -23,12 +23,7 @@ const Game = (() => {
       ChessUI.update(state);
     });
 
-    Network.on('duel-start', ({ attacker, defender, spawns }) => {
-      document.getElementById('duel-attacker').textContent =
-        `${attacker.stats.name} (${attacker.color})`;
-      document.getElementById('duel-defender').textContent =
-        `${defender.stats.name} (${defender.color})`;
-
+    Network.on('duel-start', ({ attacker, defender, spawns, arenaIndex }) => {
       showScreen('duel');
 
       FPS.startDuel({
@@ -36,6 +31,7 @@ const Game = (() => {
         attacker,
         defender,
         spawns,
+        arenaIndex,
       });
     });
 

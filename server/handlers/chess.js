@@ -1,6 +1,6 @@
 const rooms = require('../rooms');
 const { makeMove } = require('../game');
-const { generateSpawns } = require('../spawns');
+const { generateSpawns, getArenaCount } = require('../spawns');
 
 module.exports = function registerChessHandlers(io, socket) {
   socket.on('chess-move', ({ from, to, promotion }, callback) => {
@@ -19,12 +19,14 @@ module.exports = function registerChessHandlers(io, socket) {
       room.pendingMove = result.move;
       room.duelInfo = { attacker: result.attacker, defender: result.defender };
 
-      const spawns = generateSpawns();
+      const arenaIndex = Math.floor(Math.random() * getArenaCount());
+      const spawns = generateSpawns(arenaIndex);
 
       io.to(room.key).emit('duel-start', {
         attacker: result.attacker,
         defender: result.defender,
         spawns,
+        arenaIndex,
       });
       callback({ ok: true, duel: true });
     } else {
