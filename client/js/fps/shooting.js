@@ -12,10 +12,18 @@ const FPSShooting = (() => {
   let boltPending = false;
 
   let bloom = 0;
-  const BLOOM_PER_SHOT = 0.012;
-  const BLOOM_DECAY_RATE = 0.04;
-  const BLOOM_MAX = 0.06;
+  let recoilOffsetX = 0;
+  let recoilOffsetY = 0;
   const BLOOM_WEAPONS = ['pistol', 'ar', 'deagle', 'shotgun'];
+  const BLOOM_CONFIG = {
+    pistol:  { perShot: 0.008, max: 0.04,  decay: 0.06,  recoilUp: 0.003, recoilSide: 0.001 },
+    ar:      { perShot: 0.006, max: 0.07,  decay: 0.035, recoilUp: 0.004, recoilSide: 0.002 },
+    deagle:  { perShot: 0.015, max: 0.05,  decay: 0.06,  recoilUp: 0.005, recoilSide: 0.002 },
+    shotgun: { perShot: 0.01,  max: 0.03,  decay: 0.05,  recoilUp: 0.004, recoilSide: 0.001 },
+  };
+  const BASE_CROSSHAIR_SIZE = {
+    pistol: 24, bow: 22, shotgun: 50, sniper: 80, ar: 24, deagle: 26,
+  };
 
   const BULLET_SPEED = 80;
   const BULLET_MAX_DIST = 60;
@@ -31,7 +39,16 @@ const FPSShooting = (() => {
     pumpPending = false;
     boltPending = false;
     bloom = 0;
+    recoilOffsetX = 0;
+    recoilOffsetY = 0;
     lastShotTime = 0;
+    const crosshair = document.getElementById('crosshair');
+    if (crosshair) {
+      const base = BASE_CROSSHAIR_SIZE[weapon.type] || 24;
+      crosshair.style.width = base + 'px';
+      crosshair.style.height = base + 'px';
+      crosshair.style.transform = 'translate(-50%, -50%)';
+    }
   }
 
   function onMouseDown(camera, opponentMesh, stats, coverMeshes) {
@@ -39,6 +56,9 @@ const FPSShooting = (() => {
     if (weapon.type === 'bow') {
       startCharge();
       return;
+    }
+    if (isReloading && weapon.reloadPerShell && ammo > 0) {
+      cancelReload();
     }
     tryShoot(camera, opponentMesh, stats, coverMeshes);
   }
@@ -108,8 +128,11 @@ const FPSShooting = (() => {
     FPSGun.recoil();
     FPSHUD.updateAmmo(ammo, maxAmmo);
 
-    if (BLOOM_WEAPONS.includes(weapon.type)) {
-      bloom = Math.min(bloom + BLOOM_PER_SHOT, BLOOM_MAX);
+    const bc = BLOOM_CONFIG[weapon.type];
+    if (bc) {
+      bloom = Math.min(bloom + bc.perShot, bc.max);
+      recoilOffsetY += bc.recoilUp;
+      recoilOffsetX += (Math.random() - 0.5) * bc.recoilSide * 2;
     }
 
     if (weapon.type === 'shotgun') {
@@ -135,8 +158,9 @@ const FPSShooting = (() => {
     } else if (weapon.type === 'deagle') {
       fireBullet(camera, opponentMesh, weapon.damage, 0, coverMeshes, weapon.aimAssist);
     } else if (weapon.type === 'ar') {
-      const spread = FPSGun.getIsADS() ? 0.005 : 0.02;
-      fireBullet(camera, opponentMesh, weapon.damage, spread, coverMeshes);
+      const baseSpread = FPSGun.getIsADS() ? 0.005 : 0.02;
+      const adsBloomReduction = FPSGun.getIsADS() ? 0.5 : 1;
+      fireBullet(camera, opponentMesh, weapon.damage, baseSpread, coverMeshes, null, adsBloomReduction);
     } else {
       fireBullet(camera, opponentMesh, weapon.damage, 0, coverMeshes);
     }
@@ -144,15 +168,21 @@ const FPSShooting = (() => {
     Network.sendDuelShoot(FPSPlayer.getState());
   }
 
-  function fireBullet(camera, opponentMesh, damage, spread, coverMeshes, aimAssist) {
+  function fireBullet(camera, opponentMesh, damage, spread, coverMeshes, aimAssist, bloomMult) {
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
 
-    const totalSpread = spread + (BLOOM_WEAPONS.includes(weapon.type) ? bloom : 0);
+    const bm = bloomMult !== undefined && bloomMult !== null ? bloomMult : 1;
+    const bloomSpread = BLOOM_WEAPONS.includes(weapon.type) ? bloom * bm : 0;
+    const totalSpread = spread + bloomSpread;
+
+    dir.x += recoilOffsetX * bm;
+    dir.y += recoilOffsetY * bm;
+
     if (totalSpread > 0) {
       dir.x += (Math.random() - 0.5) * totalSpread;
       dir.y += (Math.random() - 0.5) * totalSpread;
-      dir.normalize();
     }
+    dir.normalize();
 
     const origin = camera.position.clone().add(dir.clone().multiplyScalar(0.8));
     spawnBullet(FPSRenderer.getScene(), origin, dir, 0xffcc00);
@@ -377,15 +407,34 @@ const FPSShooting = (() => {
   }
 
   function updateBloom(dt) {
+    const bc = BLOOM_CONFIG[weapon ? weapon.type : ''];
+    const decayRate = bc ? bc.decay : 0.06;
+
     if (bloom > 0) {
-      bloom = Math.max(0, bloom - BLOOM_DECAY_RATE * dt);
+      bloom = Math.max(0, bloom - decayRate * dt);
     }
+
+    recoilOffsetX *= Math.max(0, 1 - 4 * dt);
+    recoilOffsetY *= Math.max(0, 1 - 3 * dt);
+
+    if (Math.abs(recoilOffsetX) < 0.0001) recoilOffsetX = 0;
+    if (Math.abs(recoilOffsetY) < 0.0001) recoilOffsetY = 0;
+
     const crosshair = document.getElementById('crosshair');
-    const expandPx = bloom * 600;
-    const baseSize = 24;
+    const baseSize = BASE_CROSSHAIR_SIZE[weapon ? weapon.type : ''] || 24;
+    const expandPx = bloom * 800;
     const newSize = baseSize + expandPx;
     crosshair.style.width = newSize + 'px';
     crosshair.style.height = newSize + 'px';
+
+    const driftX = recoilOffsetX * 3000;
+    const driftY = -recoilOffsetY * 3000;
+    crosshair.style.transform = `translate(calc(-50% + ${driftX}px), calc(-50% + ${driftY}px))`;
+
+    const reddotDot = document.querySelector('.reddot-dot');
+    if (reddotDot) {
+      reddotDot.style.transform = `translate(calc(-50% + ${driftX}px), calc(-50% + ${driftY}px))`;
+    }
   }
 
   function getBloom() { return bloom; }
@@ -398,6 +447,14 @@ const FPSShooting = (() => {
     pumpPending = false;
     boltPending = false;
     bloom = 0;
+    recoilOffsetX = 0;
+    recoilOffsetY = 0;
+    const crosshair = document.getElementById('crosshair');
+    if (crosshair) {
+      crosshair.style.width = '24px';
+      crosshair.style.height = '24px';
+      crosshair.style.transform = 'translate(-50%, -50%)';
+    }
     for (const b of activeBullets) {
       b.scene.remove(b.mesh);
     }

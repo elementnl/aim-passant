@@ -113,6 +113,8 @@ const FPSHUD = (() => {
 
   function showCountdown(callback) {
     const el = document.getElementById('duel-countdown');
+    const crosshair = document.getElementById('crosshair');
+    crosshair.classList.add('hidden');
     el.classList.remove('hidden');
     let count = 3;
     el.textContent = count;
@@ -128,6 +130,7 @@ const FPSHUD = (() => {
         Audio.play('countdownGo');
       } else {
         el.classList.add('hidden');
+        crosshair.classList.remove('hidden');
         clearInterval(interval);
         callback();
       }

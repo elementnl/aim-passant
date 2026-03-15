@@ -220,10 +220,12 @@ const Game = (() => {
     el.textContent = won ? 'DUEL WON' : 'DUEL LOST';
     el.className = 'duel-result ' + (won ? 'duel-result-win' : 'duel-result-loss');
     el.classList.remove('hidden');
+    document.getElementById('crosshair').classList.add('hidden');
   }
 
   function hideDuelResult() {
     document.getElementById('duel-result').classList.add('hidden');
+    document.getElementById('crosshair').classList.remove('hidden');
   }
 
   return { init, showScreen };

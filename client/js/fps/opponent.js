@@ -3,17 +3,19 @@ const FPSOpponent = (() => {
   let originalMaterials = [];
   let healthBarGroup = null;
   let healthFillMesh = null;
+  let healthBgMesh = null;
   let healthMaxHP = 100;
   let healthCurrentHP = 100;
   const currentPos = new THREE.Vector3();
   const targetPos = new THREE.Vector3();
   const rot = { yaw: 0 };
 
-  const BAR_WIDTH = 0.8;
-  const BAR_HEIGHT = 0.06;
+  const BAR_WIDTH = 1.2;
+  const BAR_HEIGHT = 0.1;
 
   function create(scene, isAttacker, pieceType) {
     if (mesh) scene.remove(mesh);
+    if (healthBarGroup) scene.remove(healthBarGroup);
 
     const color = isAttacker ? 0x4488ff : 0xff4444;
     mesh = FPSModels.createPieceModel(pieceType || 'p', color);
@@ -25,25 +27,30 @@ const FPSOpponent = (() => {
       }
     });
 
-    createHealthBar();
+    createHealthBar(scene);
     scene.add(mesh);
   }
 
-  function createHealthBar() {
+  function createHealthBar(scene) {
     healthBarGroup = new THREE.Group();
 
     const bgGeo = new THREE.PlaneGeometry(BAR_WIDTH, BAR_HEIGHT);
-    const bgMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
-    const bg = new THREE.Mesh(bgGeo, bgMat);
-    healthBarGroup.add(bg);
+    const bgMat = new THREE.MeshBasicMaterial({
+      color: 0x000000, transparent: true, opacity: 0.5,
+      side: THREE.DoubleSide,
+    });
+    healthBgMesh = new THREE.Mesh(bgGeo, bgMat);
+    healthBarGroup.add(healthBgMesh);
 
     const fillGeo = new THREE.PlaneGeometry(BAR_WIDTH, BAR_HEIGHT);
-    const fillMat = new THREE.MeshBasicMaterial({ color: 0xe74c3c, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+    const fillMat = new THREE.MeshBasicMaterial({
+      color: 0x2ecc71, transparent: true, opacity: 0.9,
+      side: THREE.DoubleSide,
+    });
     healthFillMesh = new THREE.Mesh(fillGeo, fillMat);
     healthBarGroup.add(healthFillMesh);
 
-    healthBarGroup.position.y = 1.9;
-    mesh.add(healthBarGroup);
+    scene.add(healthBarGroup);
   }
 
   function setHP(current, max) {
@@ -73,7 +80,7 @@ const FPSOpponent = (() => {
     if (!mesh) return;
     const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     mesh.traverse(child => {
-      if (child.isMesh && child !== healthFillMesh && child.parent !== healthBarGroup) {
+      if (child.isMesh) {
         child.material = whiteMat;
       }
     });
@@ -97,7 +104,9 @@ const FPSOpponent = (() => {
     mesh.rotation.y = rot.yaw;
 
     if (healthBarGroup) {
-      healthBarGroup.rotation.y = -mesh.rotation.y;
+      healthBarGroup.position.set(currentPos.x, currentPos.y + 1.1, currentPos.z);
+      const camera = FPSRenderer.getCamera();
+      healthBarGroup.lookAt(camera.position);
     }
   }
 
@@ -108,8 +117,12 @@ const FPSOpponent = (() => {
       scene.remove(mesh);
       mesh = null;
       originalMaterials = [];
+    }
+    if (healthBarGroup) {
+      scene.remove(healthBarGroup);
       healthBarGroup = null;
       healthFillMesh = null;
+      healthBgMesh = null;
     }
   }
 
