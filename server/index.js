@@ -9,20 +9,18 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, '..', 'client')));
+const chessJsSrc = fs.readFileSync(
+  path.join(__dirname, '..', 'node_modules', 'chess.js', 'dist', 'cjs', 'chess.js'),
+  'utf-8'
+);
+const chessJsWrapped = `(function(){var exports={};${chessJsSrc}\nwindow.Chess=exports.Chess;})();`;
 
 app.get('/lib/chess.js', (_req, res) => {
-  const src = fs.readFileSync(
-    path.join(__dirname, '..', 'node_modules', 'chess.js', 'dist', 'cjs', 'chess.js'),
-    'utf-8'
-  );
-  const wrapped = `(function(){var exports={};${src}\nwindow.Chess=exports.Chess;})();`;
-  res.type('application/javascript').send(wrapped);
+  res.type('application/javascript').send(chessJsWrapped);
 });
 
-app.get('/shared/pieces.js', (_req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'shared', 'pieces.js'));
-});
+app.use(express.static(path.join(__dirname, '..', 'client')));
+app.use('/shared', express.static(path.join(__dirname, '..', 'shared')));
 
 registerSocketHandlers(io);
 

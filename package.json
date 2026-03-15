@@ -12,7 +12,7 @@
   "description": "",
   "dependencies": {
     "chess.js": "^1.4.0",
-    "express": "^5.2.1",
+    "express": "^4.22.1",
     "socket.io": "^4.8.3"
   }
 }
