@@ -1,6 +1,6 @@
 const Lobby = (() => {
   let isHost = false;
-  let roomCode = null;
+  let roomName = null;
   let myColor = 'white';
 
   function init() {
@@ -21,10 +21,12 @@ const Lobby = (() => {
     });
 
     document.getElementById('btn-create-confirm').addEventListener('click', async () => {
+      const name = document.getElementById('input-room-name-create').value.trim();
       const password = document.getElementById('input-password-create').value;
+      if (!name) return showError('Enter a room name');
       try {
-        const result = await Network.createRoom(password || null);
-        roomCode = result.code;
+        const result = await Network.createRoom(name, password || null);
+        roomName = result.name;
         isHost = true;
         myColor = 'white';
         showWaitingRoom();
@@ -34,12 +36,12 @@ const Lobby = (() => {
     });
 
     document.getElementById('btn-join-confirm').addEventListener('click', async () => {
-      const code = document.getElementById('input-room-code').value.toUpperCase();
+      const name = document.getElementById('input-room-name-join').value.trim();
       const password = document.getElementById('input-password-join').value;
-      if (!code) return showError('Enter a room code');
+      if (!name) return showError('Enter a room name');
       try {
-        const result = await Network.joinRoom(code, password || null);
-        roomCode = result.code;
+        const result = await Network.joinRoom(name, password || null);
+        roomName = result.name;
         isHost = false;
         myColor = result.color;
         showWaitingRoom();
@@ -73,7 +75,7 @@ const Lobby = (() => {
 
   function showWaitingRoom() {
     Game.showScreen('waiting');
-    document.getElementById('room-code').textContent = roomCode;
+    document.getElementById('room-display-name').textContent = roomName;
     document.getElementById('player-color').textContent = `You are playing as ${myColor}`;
     document.getElementById('waiting-status').textContent =
       isHost ? 'Waiting for opponent...' : 'Opponent connected!';

@@ -12,7 +12,7 @@ module.exports = function registerSocketHandlers(io) {
     socket.on('disconnect', () => {
       const result = rooms.removePlayer(socket.id);
       if (result && !result.empty) {
-        io.to(result.room.code).emit('opponent-disconnected');
+        io.to(result.room.key).emit('opponent-disconnected');
         result.room.state = 'gameover';
       }
     });

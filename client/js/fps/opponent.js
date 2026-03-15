@@ -4,17 +4,16 @@ const FPSOpponent = (() => {
   const targetPos = new THREE.Vector3();
   const rot = { yaw: 0 };
 
-  function create(scene, isAttacker) {
+  function create(scene, isAttacker, pieceType) {
     if (mesh) scene.remove(mesh);
 
     const color = isAttacker ? 0x4488ff : 0xff4444;
-    const bodyMat = new THREE.MeshLambertMaterial({ color });
-
-    mesh = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 0.8), bodyMat);
-
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), bodyMat);
-    head.position.y = 1.1;
-    mesh.add(head);
+    mesh = FPSModels.createPieceModel(pieceType || 'p', color);
+    mesh.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+      }
+    });
 
     scene.add(mesh);
   }

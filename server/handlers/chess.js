@@ -1,5 +1,6 @@
 const rooms = require('../rooms');
 const { makeMove } = require('../game');
+const { generateSpawns } = require('../spawns');
 
 module.exports = function registerChessHandlers(io, socket) {
   socket.on('chess-move', ({ from, to, promotion }, callback) => {
@@ -18,18 +19,21 @@ module.exports = function registerChessHandlers(io, socket) {
       room.pendingMove = result.move;
       room.duelInfo = { attacker: result.attacker, defender: result.defender };
 
-      io.to(room.code).emit('duel-start', {
+      const spawns = generateSpawns();
+
+      io.to(room.key).emit('duel-start', {
         attacker: result.attacker,
         defender: result.defender,
+        spawns,
       });
       callback({ ok: true, duel: true });
     } else {
-      io.to(room.code).emit('chess-update', result.state);
+      io.to(room.key).emit('chess-update', result.state);
       callback({ ok: true, duel: false, state: result.state });
 
       if (result.state.isGameOver) {
         room.state = 'gameover';
-        io.to(room.code).emit('game-over', {
+        io.to(room.key).emit('game-over', {
           reason: result.state.isCheckmate ? 'checkmate' : 'draw',
           winner: result.state.isCheckmate ? currentTurn : null,
         });

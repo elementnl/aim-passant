@@ -15,6 +15,7 @@ const ChessUI = (() => {
   }
 
   function update(chessState) {
+    const hadFen = fen !== null;
     fen = chessState.fen;
     isMyTurn = chessState.turn === myColor;
     selectedSquare = null;
@@ -22,6 +23,7 @@ const ChessUI = (() => {
     renderBoard();
     updateTurnIndicator(chessState);
     updateCapturedPieces(chessState.capturedPieces);
+    if (hadFen) Audio.play('chessMove');
   }
 
   function parseFEN(fenStr) {

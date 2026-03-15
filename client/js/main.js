@@ -8,6 +8,7 @@ const Game = (() => {
   let myColor = null;
 
   function init() {
+    Audio.preload();
     Lobby.init();
     FPS.init();
 
@@ -22,7 +23,7 @@ const Game = (() => {
       ChessUI.update(state);
     });
 
-    Network.on('duel-start', ({ attacker, defender }) => {
+    Network.on('duel-start', ({ attacker, defender, spawns }) => {
       document.getElementById('duel-attacker').textContent =
         `${attacker.stats.name} (${attacker.color})`;
       document.getElementById('duel-defender').textContent =
@@ -34,21 +35,32 @@ const Game = (() => {
         myRole: attacker.color === myColor ? 'attacker' : 'defender',
         attacker,
         defender,
+        spawns,
       });
     });
 
     Network.on('duel-end', ({ winner, state }) => {
-      FPS.endDuel();
+      FPS.endDuel(winner);
+
+      const myRole = state.turn === myColor ? 'defender' : 'attacker';
+      const iWon = (myRole === 'attacker' && winner === 'attacker') ||
+                   (myRole === 'defender' && winner === 'defender');
+
+      Audio.play('explosion');
+      setTimeout(() => Audio.play(iWon ? 'duelWin' : 'duelLoss'), 300);
+
+      showDuelResult(iWon);
+
       setTimeout(() => {
+        hideDuelResult();
         ChessUI.update(state);
         showScreen('chess');
-      }, 1500);
+      }, 2500);
     });
 
     Network.on('game-over', ({ reason, winner }) => {
-      const delay = FPS.isActive() ? 2000 : 500;
+      const delay = FPS.isActive() ? 3000 : 500;
       setTimeout(() => {
-        FPS.endDuel();
         showScreen('gameover');
 
         const title = document.getElementById('gameover-title');
@@ -72,6 +84,17 @@ const Game = (() => {
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`screen-${name}`).classList.add('active');
+  }
+
+  function showDuelResult(won) {
+    const el = document.getElementById('duel-result');
+    el.textContent = won ? 'DUEL WON' : 'DUEL LOST';
+    el.className = 'duel-result ' + (won ? 'duel-result-win' : 'duel-result-loss');
+    el.classList.remove('hidden');
+  }
+
+  function hideDuelResult() {
+    document.getElementById('duel-result').classList.add('hidden');
   }
 
   return { init, showScreen };

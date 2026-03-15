@@ -24,12 +24,12 @@ const Network = (() => {
     });
   }
 
-  function createRoom(password) {
-    return request('create-room', { password });
+  function createRoom(name, password) {
+    return request('create-room', { name, password });
   }
 
-  function joinRoom(code, password) {
-    return request('join-room', { code, password });
+  function joinRoom(name, password) {
+    return request('join-room', { name, password });
   }
 
   function startGame() {

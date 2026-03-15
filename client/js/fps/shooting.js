@@ -6,12 +6,25 @@ const FPSShooting = (() => {
   const BULLET_MAX_DIST = 60;
   const BULLET_SIZE = 0.06;
 
+  const MAX_AMMO = 12;
+  let ammo = MAX_AMMO;
+  let isReloading = false;
+
   function tryShoot(camera, opponentMesh, stats, coverMeshes) {
+    if (isReloading || FPSGun.isReloading()) return;
+    if (ammo <= 0) {
+      Audio.play('emptyClick');
+      return;
+    }
+
     const now = performance.now();
     if (now - lastShotTime < stats.fireRate) return;
     lastShotTime = now;
+    ammo--;
 
     FPSGun.recoil();
+    Audio.play('shoot');
+    FPSHUD.updateAmmo(ammo, MAX_AMMO);
 
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
     const origin = camera.position.clone().add(dir.clone().multiplyScalar(0.8));
@@ -30,11 +43,30 @@ const FPSShooting = (() => {
         if (hitOpponent) {
           Network.sendDuelHit(stats.damage);
           showHitMarker();
+          Audio.play('hitConfirm');
         }
       }
     }
 
     Network.sendDuelShoot(FPSPlayer.getState());
+  }
+
+  function reload() {
+    if (isReloading || ammo >= MAX_AMMO) return;
+    isReloading = true;
+    FPSHUD.showReloading(true);
+    Audio.play('reload');
+
+    FPSGun.playReloadAnimation(() => {
+      ammo = MAX_AMMO;
+      isReloading = false;
+      FPSHUD.updateAmmo(ammo, MAX_AMMO);
+      FPSHUD.showReloading(false);
+    });
+  }
+
+  function tryReload() {
+    reload();
   }
 
   function isChildOf(object, parent) {
@@ -105,11 +137,16 @@ const FPSShooting = (() => {
 
   function reset() {
     lastShotTime = 0;
+    ammo = MAX_AMMO;
+    isReloading = false;
     for (const b of activeBullets) {
       b.scene.remove(b.mesh);
     }
     activeBullets.length = 0;
   }
 
-  return { tryShoot, showOpponentTracer, updateBullets, reset };
+  function getAmmo() { return ammo; }
+  function getMaxAmmo() { return MAX_AMMO; }
+
+  return { tryShoot, tryReload, showOpponentTracer, updateBullets, reset, getAmmo, getMaxAmmo };
 })();

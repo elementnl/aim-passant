@@ -15,7 +15,8 @@
         <div class="lobby-section">
           <button id="btn-create" class="btn btn-primary">Create Room</button>
           <div id="create-options" class="hidden">
-            <input type="password" id="input-password-create" placeholder="Password (optional)" class="input">
+            <input type="text" id="input-room-name-create" placeholder="Room Name" class="input" maxlength="30" autocomplete="off" data-1p-ignore data-lpignore="true">
+            <input type="text" id="input-password-create" placeholder="Password (optional)" class="input" autocomplete="off" data-1p-ignore data-lpignore="true">
             <button id="btn-create-confirm" class="btn">Create</button>
           </div>
         </div>
@@ -23,8 +24,8 @@
         <div class="lobby-section">
           <button id="btn-join" class="btn btn-primary">Join Room</button>
           <div id="join-options" class="hidden">
-            <input type="text" id="input-room-code" placeholder="Room Code" class="input" maxlength="5" style="text-transform:uppercase">
-            <input type="password" id="input-password-join" placeholder="Password (if any)" class="input">
+            <input type="text" id="input-room-name-join" placeholder="Room Name" class="input" maxlength="30" autocomplete="off" data-1p-ignore data-lpignore="true">
+            <input type="text" id="input-password-join" placeholder="Password (if any)" class="input" autocomplete="off" data-1p-ignore data-lpignore="true">
             <button id="btn-join-confirm" class="btn">Join</button>
           </div>
         </div>
@@ -37,7 +38,7 @@
     <div class="lobby-container">
       <h1 class="title">AIM PASSANT</h1>
       <div class="room-info">
-        <p>Room Code: <span id="room-code" class="room-code"></span></p>
+        <p>Room: <span id="room-display-name" class="room-code"></span></p>
         <p id="waiting-status">Waiting for opponent...</p>
       </div>
       <p id="player-color" class="player-color"></p>
@@ -69,12 +70,20 @@
       <div class="crosshair-line crosshair-left"></div>
       <div class="crosshair-dot"></div>
     </div>
+    <div id="reload-spinner" class="reload-spinner hidden">
+      <div class="spinner-ring"></div>
+    </div>
+    <div id="duel-result" class="duel-result hidden"></div>
     <div id="duel-hud" class="duel-hud">
       <div class="hud-health">
         <div id="health-bar" class="health-bar">
           <div id="health-fill" class="health-fill"></div>
         </div>
         <span id="health-text">100</span>
+      </div>
+      <div class="hud-ammo">
+        <span id="ammo-text">12 / 12</span>
+        <span id="reload-indicator" class="reload-indicator hidden">[R] RELOADING</span>
       </div>
       <div id="weapon-info" class="weapon-info"></div>
     </div>
@@ -92,6 +101,7 @@
   <script src="/lib/chess.js"></script>
   <script src="/shared/pieces.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/audio.js"></script>
   <script src="js/network.js"></script>
   <script src="js/lobby.js"></script>
   <script src="js/chess.js"></script>
@@ -99,9 +109,11 @@
   <script src="js/fps/input.js"></script>
   <script src="js/fps/renderer.js"></script>
   <script src="js/fps/arena.js"></script>
+  <script src="js/fps/models.js"></script>
   <script src="js/fps/player.js"></script>
   <script src="js/fps/opponent.js"></script>
   <script src="js/fps/gun.js"></script>
+  <script src="js/fps/effects.js"></script>
   <script src="js/fps/shooting.js"></script>
   <script src="js/fps/hud.js"></script>
   <script src="js/fps/index.js"></script>

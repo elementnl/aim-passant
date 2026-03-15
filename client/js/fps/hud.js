@@ -10,6 +10,22 @@ const FPSHUD = (() => {
     else fill.style.background = '#e74c3c';
   }
 
+  function updateAmmo(current, max) {
+    document.getElementById('ammo-text').textContent = `${current} / ${max}`;
+  }
+
+  function showReloading(show) {
+    const indicator = document.getElementById('reload-indicator');
+    const spinner = document.getElementById('reload-spinner');
+    if (show) {
+      indicator.classList.remove('hidden');
+      spinner.classList.remove('hidden');
+    } else {
+      indicator.classList.add('hidden');
+      spinner.classList.add('hidden');
+    }
+  }
+
   function setWeaponInfo(stats) {
     document.getElementById('weapon-info').textContent =
       `${stats.name} | DMG: ${stats.damage} | RPM: ${Math.round(60000 / stats.fireRate)}`;
@@ -29,13 +45,16 @@ const FPSHUD = (() => {
     el.classList.remove('hidden');
     let count = 3;
     el.textContent = count;
+    Audio.play('countdownTick');
 
     const interval = setInterval(() => {
       count--;
       if (count > 0) {
         el.textContent = count;
+        Audio.play('countdownTick');
       } else if (count === 0) {
         el.textContent = 'FIGHT!';
+        Audio.play('countdownGo');
       } else {
         el.classList.add('hidden');
         clearInterval(interval);
@@ -44,5 +63,5 @@ const FPSHUD = (() => {
     }, FPSConfig.COUNTDOWN_INTERVAL);
   }
 
-  return { updateHealth, setWeaponInfo, flashDamage, showCountdown };
+  return { updateHealth, updateAmmo, showReloading, setWeaponInfo, flashDamage, showCountdown };
 })();

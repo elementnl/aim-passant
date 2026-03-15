@@ -27,7 +27,6 @@ function colorName(c) {
 
 function makeMove(room, from, to, promotion) {
   const chess = room.chess;
-  const targetPiece = chess.get(to);
   const movingPiece = chess.get(from);
 
   if (!movingPiece) return { error: 'No piece at source square' };
@@ -35,7 +34,9 @@ function makeMove(room, from, to, promotion) {
   const move = chess.move({ from, to, promotion: promotion || undefined });
   if (!move) return { error: 'Invalid move' };
 
-  if (targetPiece) {
+  if (move.captured) {
+    const capturedType = move.captured;
+    const capturedColor = movingPiece.color === 'w' ? 'b' : 'w';
     chess.undo();
     return {
       duel: true,
@@ -47,10 +48,10 @@ function makeMove(room, from, to, promotion) {
         stats: { ...PIECE_STATS[movingPiece.type] },
       },
       defender: {
-        piece: targetPiece.type,
-        color: colorName(targetPiece.color),
+        piece: capturedType,
+        color: colorName(capturedColor),
         square: to,
-        stats: { ...PIECE_STATS[targetPiece.type] },
+        stats: { ...PIECE_STATS[capturedType] },
       },
     };
   }
@@ -65,18 +66,43 @@ function resolveDuel(room, winner, pendingMove) {
   const defenderPiece = chess.get(to);
 
   if (winner === 'attacker') {
-    chess.move({ from, to, promotion: promotion || undefined });
+    const kingCaptured = defenderPiece && defenderPiece.type === 'k';
 
+    if (kingCaptured) {
+      if (defenderPiece) {
+        room.capturedPieces[colorName(defenderPiece.color)].push(defenderPiece.type);
+      }
+      return {
+        winner: 'attacker',
+        state: { fen: chess.fen(), turn: colorName(chess.turn()), capturedPieces: room.capturedPieces },
+        kingCaptured: true,
+        capturedKingColor: colorName(defenderPiece.color),
+      };
+    }
+
+    chess.move({ from, to, promotion: promotion || undefined });
     if (defenderPiece) {
       room.capturedPieces[colorName(defenderPiece.color)].push(defenderPiece.type);
     }
-
-    const kingCaptured = defenderPiece && defenderPiece.type === 'k';
     return {
       winner: 'attacker',
       state: getChessState(room),
-      kingCaptured,
-      capturedKingColor: kingCaptured ? colorName(defenderPiece.color) : null,
+      kingCaptured: false,
+      capturedKingColor: null,
+    };
+  }
+
+  const kingCaptured = attackerPiece && attackerPiece.type === 'k';
+
+  if (kingCaptured) {
+    if (attackerPiece) {
+      room.capturedPieces[colorName(attackerPiece.color)].push(attackerPiece.type);
+    }
+    return {
+      winner: 'defender',
+      state: { fen: chess.fen(), turn: colorName(chess.turn()), capturedPieces: room.capturedPieces },
+      kingCaptured: true,
+      capturedKingColor: colorName(attackerPiece.color),
     };
   }
 
@@ -93,12 +119,11 @@ function resolveDuel(room, winner, pendingMove) {
   if (parts[1] === 'w') parts[5] = String(parseInt(parts[5]) + 1);
   chess.load(parts.join(' '));
 
-  const kingCaptured = attackerPiece && attackerPiece.type === 'k';
   return {
     winner: 'defender',
     state: getChessState(room),
-    kingCaptured,
-    capturedKingColor: kingCaptured ? colorName(attackerPiece.color) : null,
+    kingCaptured: false,
+    capturedKingColor: null,
   };
 }
 

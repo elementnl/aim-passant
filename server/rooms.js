@@ -1,22 +1,18 @@
 const rooms = new Map();
 
-const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ROOM_CODE_LENGTH = 5;
-
-function generateRoomCode() {
-  let code = '';
-  for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
-    code += ROOM_CODE_CHARS[Math.floor(Math.random() * ROOM_CODE_CHARS.length)];
-  }
-  return code;
+function normalize(name) {
+  return name.trim().toLowerCase();
 }
 
-function create(hostSocketId, password) {
-  let code;
-  do { code = generateRoomCode(); } while (rooms.has(code));
+function create(hostSocketId, name, password) {
+  const key = normalize(name);
+  if (!key) return { error: 'Room name is required' };
+  if (key.length > 30) return { error: 'Room name too long' };
+  if (rooms.has(key)) return { error: 'Room name already taken' };
 
   const room = {
-    code,
+    name: name.trim(),
+    key,
     password: password || null,
     host: hostSocketId,
     players: [{ id: hostSocketId, color: 'white' }],
@@ -28,12 +24,13 @@ function create(hostSocketId, password) {
     capturedPieces: { white: [], black: [] },
   };
 
-  rooms.set(code, room);
-  return room;
+  rooms.set(key, room);
+  return { room };
 }
 
-function join(code, socketId, password) {
-  const room = rooms.get(code);
+function join(name, socketId, password) {
+  const key = normalize(name);
+  const room = rooms.get(key);
   if (!room) return { error: 'Room not found' };
   if (room.players.length >= 2) return { error: 'Room is full' };
   if (room.password && room.password !== password) return { error: 'Wrong password' };
@@ -43,8 +40,8 @@ function join(code, socketId, password) {
   return { room };
 }
 
-function getByCode(code) {
-  return rooms.get(code);
+function getByName(name) {
+  return rooms.get(normalize(name));
 }
 
 function getByPlayer(socketId) {
@@ -61,7 +58,7 @@ function removePlayer(socketId) {
   room.players = room.players.filter(p => p.id !== socketId);
 
   if (room.players.length === 0) {
-    rooms.delete(room.code);
+    rooms.delete(room.key);
     return { room, empty: true };
   }
 
@@ -72,4 +69,4 @@ function removePlayer(socketId) {
   return { room, empty: false };
 }
 
-module.exports = { create, join, getByCode, getByPlayer, removePlayer };
+module.exports = { create, join, getByName, getByPlayer, removePlayer };

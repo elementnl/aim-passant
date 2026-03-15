@@ -6,14 +6,9 @@ const FPSPlayer = (() => {
 
   const PLAYER_RADIUS = 0.3;
 
-  function spawn(isAttacker) {
-    if (isAttacker) {
-      position.set(-7, FPSConfig.PLAYER_HEIGHT, 0);
-      rotation.yaw = Math.PI / 2;
-    } else {
-      position.set(7, FPSConfig.PLAYER_HEIGHT, 0);
-      rotation.yaw = -Math.PI / 2;
-    }
+  function spawn(spawnData) {
+    position.set(spawnData.x, FPSConfig.PLAYER_HEIGHT, spawnData.z);
+    rotation.yaw = spawnData.yaw;
     velocity.set(0, 0, 0);
     rotation.pitch = 0;
     onGround = true;
@@ -32,6 +27,21 @@ const FPSPlayer = (() => {
       }
     }
     return false;
+  }
+
+  function getGroundHeight(x, z) {
+    const colliders = FPSArena.getColliders();
+    let highest = 0;
+
+    for (const c of colliders) {
+      if (x + PLAYER_RADIUS > c.minX && x - PLAYER_RADIUS < c.maxX &&
+          z + PLAYER_RADIUS > c.minZ && z - PLAYER_RADIUS < c.maxZ) {
+        if (c.maxY > highest) {
+          highest = c.maxY;
+        }
+      }
+    }
+    return highest;
   }
 
   function update(dt, speed) {
@@ -71,15 +81,24 @@ const FPSPlayer = (() => {
     }
 
     let newY = position.y + velocity.y * dt;
-    if (newY <= PLAYER_HEIGHT) {
-      newY = PLAYER_HEIGHT;
+    const groundHeight = getGroundHeight(position.x, position.z);
+    const minY = groundHeight + PLAYER_HEIGHT;
+
+    if (newY <= minY) {
+      newY = minY;
       velocity.y = 0;
       onGround = true;
     }
+
     if (!collidesWithCover(position.x, newY, position.z)) {
       position.y = newY;
     } else {
-      velocity.y = 0;
+      if (velocity.y > 0) {
+        velocity.y = 0;
+      } else {
+        onGround = true;
+        velocity.y = 0;
+      }
     }
 
     const mouse = FPSInput.consumeMouse();
