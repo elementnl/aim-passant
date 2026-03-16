@@ -31,6 +31,17 @@
         </div>
       </div>
       <p id="lobby-error" class="error hidden"></p>
+      <button id="btn-settings" class="btn settings-btn">Settings</button>
+      <div id="settings-panel" class="settings-panel hidden">
+        <div class="settings-row">
+          <span class="settings-label">Graphics</span>
+          <div class="settings-options">
+            <button class="btn settings-opt" data-setting="graphics" data-value="low">Low</button>
+            <button class="btn settings-opt" data-setting="graphics" data-value="medium">Medium</button>
+            <button class="btn settings-opt active" data-setting="graphics" data-value="high">High</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -148,6 +159,7 @@
   <script src="/lib/chess.js"></script>
   <script src="/shared/pieces.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/settings.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/network.js"></script>
   <script src="js/lobby.js"></script>

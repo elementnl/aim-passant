@@ -59,6 +59,25 @@ const Lobby = (() => {
       window.location.reload();
     });
 
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      document.getElementById('settings-panel').classList.toggle('hidden');
+    });
+
+    document.querySelectorAll('.settings-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const setting = btn.dataset.setting;
+        const value = btn.dataset.value;
+        Settings.set(setting, value);
+        btn.parentElement.querySelectorAll('.settings-opt').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    const currentGraphics = Settings.get('graphics');
+    document.querySelectorAll('.settings-opt[data-setting="graphics"]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === currentGraphics);
+    });
+
     Network.on('room-update', ({ players }) => {
       if (players >= 2) {
         document.getElementById('waiting-status').textContent = 'Opponent connected!';

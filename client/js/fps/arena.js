@@ -144,6 +144,9 @@ const FPSArena = (() => {
 
   function build(scene, layoutIndex) {
     const { ARENA_SIZE, WALL_HEIGHT } = FPSConfig;
+    const quality = Settings.get('graphics');
+    const useShadows = quality !== 'low';
+    const useTextures = quality !== 'low';
     colliders.length = 0;
     destructibles.length = 0;
 
@@ -153,13 +156,15 @@ const FPSArena = (() => {
       currentLayout = Math.floor(Math.random() * LAYOUTS.length);
     }
 
-    const floorTex = createFloorTexture();
+    const floorMat = useTextures
+      ? new THREE.MeshLambertMaterial({ map: createFloorTexture() })
+      : new THREE.MeshLambertMaterial({ color: 0x8a8a8a });
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE),
-      new THREE.MeshLambertMaterial({ map: floorTex })
+      floorMat
     );
     floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
+    if (useShadows) floor.receiveShadow = true;
     scene.add(floor);
 
     const ceiling = new THREE.Mesh(
@@ -170,8 +175,8 @@ const FPSArena = (() => {
     ceiling.position.y = WALL_HEIGHT;
     scene.add(ceiling);
 
-    const wallTex = createWallTexture();
     const half = ARENA_SIZE / 2;
+    const wallTex = useTextures ? createWallTexture() : null;
 
     [
       { pos: [0, WALL_HEIGHT / 2, -half], size: [ARENA_SIZE, WALL_HEIGHT, 0.5], texRepeat: [8, 2] },
@@ -179,12 +184,17 @@ const FPSArena = (() => {
       { pos: [-half, WALL_HEIGHT / 2, 0], size: [0.5, WALL_HEIGHT, ARENA_SIZE], texRepeat: [8, 2] },
       { pos: [half, WALL_HEIGHT / 2, 0],  size: [0.5, WALL_HEIGHT, ARENA_SIZE], texRepeat: [8, 2] },
     ].forEach(({ pos, size, texRepeat }) => {
-      const tex = wallTex.clone();
-      tex.repeat.set(...texRepeat);
-      const mat = new THREE.MeshLambertMaterial({ map: tex });
+      let mat;
+      if (wallTex) {
+        const tex = wallTex.clone();
+        tex.repeat.set(...texRepeat);
+        mat = new THREE.MeshLambertMaterial({ map: tex });
+      } else {
+        mat = new THREE.MeshLambertMaterial({ color: 0x6a6a6a });
+      }
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat);
       mesh.position.set(...pos);
-      mesh.receiveShadow = true;
+      if (useShadows) mesh.receiveShadow = true;
       scene.add(mesh);
     });
 
@@ -198,8 +208,10 @@ const FPSArena = (() => {
       const mat = new THREE.MeshLambertMaterial({ color });
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...size), mat);
       mesh.position.set(...pos);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
+      if (useShadows) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
       scene.add(mesh);
       coverMeshes.push(mesh);
 

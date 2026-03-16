@@ -135,6 +135,49 @@ body {
   margin-top: 0.5rem;
 }
 
+/* Settings */
+.settings-btn {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+}
+
+.settings-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  background: #fff;
+  text-align: left;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings-label {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.settings-options {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.settings-opt {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.7rem;
+  border-width: 1px;
+}
+
+.settings-opt.active {
+  background: #222;
+  color: #fff;
+}
+
 /* Chess Board */
 .chess-container {
   --board-size: min(85vmin, 560px);
