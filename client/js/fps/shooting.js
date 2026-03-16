@@ -28,6 +28,29 @@ const FPSShooting = (() => {
   const BULLET_SPEED = 80;
   const BULLET_MAX_DIST = 60;
   const BULLET_SIZE = 0.06;
+  let onHitCallback = null;
+
+  function setHitCallback(cb) { onHitCallback = cb; }
+
+  function isPlayground() {
+    return document.getElementById('screen-playground')?.classList.contains('active');
+  }
+
+  function checkKnightUlt() {
+    return isPlayground() ? Playground.isKnightUltActive() : checkKnightUlt();
+  }
+
+  function consumeKnightUltCheck() {
+    if (isPlayground()) Playground.consumeKnightUlt();
+    else consumeKnightUltCheck();
+  }
+
+  function getCrosshair() {
+    return document.getElementById('crosshair-pg') &&
+           document.getElementById('screen-playground')?.classList.contains('active')
+      ? document.getElementById('crosshair-pg')
+      : getCrosshair();
+  }
 
   function init(stats) {
     weapon = stats.weapon;
@@ -42,7 +65,7 @@ const FPSShooting = (() => {
     recoilOffsetX = 0;
     recoilOffsetY = 0;
     lastShotTime = 0;
-    const crosshair = document.getElementById('crosshair');
+    const crosshair = getCrosshair();
     if (crosshair) {
       const base = BASE_CROSSHAIR_SIZE[weapon.type] || 24;
       crosshair.style.width = base + 'px';
@@ -53,7 +76,7 @@ const FPSShooting = (() => {
 
   function onMouseDown(camera, opponentMesh, stats, coverMeshes) {
     mouseHeld = true;
-    if (FPSAbilities.isDisarmed()) return;
+    if ((!isPlayground() && FPSAbilities.isDisarmed())) return;
     if (weapon.type === 'bow') {
       startCharge();
       return;
@@ -72,7 +95,7 @@ const FPSShooting = (() => {
   }
 
   function onMouseHeld(camera, opponentMesh, stats, coverMeshes) {
-    if (!mouseHeld || !weapon.auto || FPSAbilities.isDisarmed()) return;
+    if (!mouseHeld || !weapon.auto || (!isPlayground() && FPSAbilities.isDisarmed())) return;
     tryShoot(camera, opponentMesh, stats, coverMeshes);
   }
 
@@ -80,7 +103,7 @@ const FPSShooting = (() => {
     if (isReloading || FPSGun.isReloading()) return;
     charging = true;
     chargeStart = performance.now();
-    if (FPSAbilities.isKnightUltActive()) {
+    if (checkKnightUlt()) {
       Audio.play('knightUltCharge');
     } else {
       Audio.play('bowDraw');
@@ -104,11 +127,11 @@ const FPSShooting = (() => {
     const damage = weapon.damageMin + (weapon.damageMax - weapon.damageMin) * chargePercent;
 
     FPSGun.bowRelease();
-    const isExplosive = FPSAbilities.isKnightUltActive();
+    const isExplosive = checkKnightUlt();
     Audio.stop('knightUltCharge');
     Audio.stop('bowDraw');
     Audio.play(isExplosive ? 'knightUltShot' : 'bowRelease');
-    if (isExplosive) FPSAbilities.consumeKnightUlt();
+    if (isExplosive) consumeKnightUltCheck();
     fireArrow(camera, opponentMesh, Math.round(damage), coverMeshes, isExplosive);
     Network.sendDuelShoot(FPSPlayer.getState());
   }
@@ -156,6 +179,7 @@ const FPSShooting = (() => {
             Network.sendDuelHit(dmg, false, FPS.getMyHP());
             FPSOpponent.flashWhite();
             FPSOpponent.takeDamage(dmg);
+            if (onHitCallback) onHitCallback(dmg);
           }
         }
       }
@@ -316,6 +340,7 @@ const FPSShooting = (() => {
         Audio.play(isHeadshot ? 'headshot' : 'hitConfirm');
         FPSOpponent.flashWhite();
         FPSOpponent.takeDamage(finalDamage);
+        if (onHitCallback) onHitCallback(finalDamage);
       } else {
         FPSEffects.spawnImpact(FPSRenderer.getScene(), closest.point);
         FPSArena.damageAt(closest.point, damage);
@@ -362,6 +387,7 @@ const FPSShooting = (() => {
             Audio.play(isHeadshot ? 'headshot' : 'hitConfirm');
             FPSOpponent.flashWhite();
             FPSOpponent.takeDamage(finalDmg);
+            if (onHitCallback) onHitCallback(finalDmg);
           }
         } else {
           FPSEffects.spawnImpact(FPSRenderer.getScene(), closest.point);
@@ -511,7 +537,7 @@ const FPSShooting = (() => {
   }
 
   function showHitMarker(isHeadshot) {
-    const el = document.getElementById('crosshair');
+    const el = getCrosshair();
     el.classList.add(isHeadshot ? 'headshot' : 'hit');
     setTimeout(() => {
       el.classList.remove('hit');
@@ -533,7 +559,7 @@ const FPSShooting = (() => {
     if (Math.abs(recoilOffsetX) < 0.0001) recoilOffsetX = 0;
     if (Math.abs(recoilOffsetY) < 0.0001) recoilOffsetY = 0;
 
-    const crosshair = document.getElementById('crosshair');
+    const crosshair = getCrosshair();
     const baseSize = BASE_CROSSHAIR_SIZE[weapon ? weapon.type : ''] || 24;
     const expandPx = bloom * 800;
     const newSize = baseSize + expandPx;
@@ -562,7 +588,7 @@ const FPSShooting = (() => {
     bloom = 0;
     recoilOffsetX = 0;
     recoilOffsetY = 0;
-    const crosshair = document.getElementById('crosshair');
+    const crosshair = getCrosshair();
     if (crosshair) {
       crosshair.style.width = '24px';
       crosshair.style.height = '24px';
@@ -581,6 +607,6 @@ const FPSShooting = (() => {
   return {
     init, onMouseDown, onMouseUp, onMouseHeld, tryShoot, tryReload, cancelReload,
     showOpponentTracer, updateBullets, updateBloom, updateChargeBar, reset,
-    getAmmo, getMaxAmmo, isCharging, getBloom,
+    setHitCallback, getAmmo, getMaxAmmo, isCharging, getBloom,
   };
 })();

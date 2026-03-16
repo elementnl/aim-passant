@@ -49,6 +49,7 @@ const FPSHUD = (() => {
 
   function updateAmmo(current, max) {
     const el = document.getElementById('ammo-text');
+    if (!el) return;
     if (max === Infinity || max === null || max === undefined || !isFinite(max)) {
       el.textContent = '\u221E';
     } else {
@@ -59,6 +60,7 @@ const FPSHUD = (() => {
   function showReloading(show) {
     const indicator = document.getElementById('reload-indicator');
     const spinner = document.getElementById('reload-spinner');
+    if (!indicator || !spinner) return;
     if (show) {
       indicator.classList.remove('hidden');
       spinner.classList.remove('hidden');
@@ -69,13 +71,15 @@ const FPSHUD = (() => {
   }
 
   function showChargeBar(show) {
-    const el = document.getElementById('charge-bar-container');
+    const el = document.getElementById('charge-bar-container') || document.getElementById('pg-charge-bar');
+    if (!el) return;
     if (show) el.classList.remove('hidden');
     else el.classList.add('hidden');
   }
 
   function updateChargeBar(pct) {
-    document.getElementById('charge-fill').style.width = (pct * 100) + '%';
+    const el = document.getElementById('charge-fill') || document.getElementById('pg-charge-fill');
+    if (el) el.style.width = (pct * 100) + '%';
   }
 
   function showScope(show, type) {

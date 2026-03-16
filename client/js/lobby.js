@@ -68,6 +68,11 @@ const Lobby = (() => {
       window.location.reload();
     });
 
+    document.getElementById('btn-playground').addEventListener('click', () => {
+      LobbyBG.stop();
+      Playground.start();
+    });
+
     initSettings();
 
     Network.on('room-update', ({ players }) => {

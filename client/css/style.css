@@ -450,6 +450,102 @@ body {
   font-size: 0.85rem;
 }
 
+/* Lobby extras */
+.lobby-divider {
+  width: 60px;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  margin: 1.2rem auto;
+}
+
+.lobby-btn-playground {
+  background: transparent;
+  color: #777;
+  border-color: #444;
+  font-size: 0.85rem;
+  margin: 0 auto;
+}
+
+.lobby-btn-playground:hover {
+  color: #fff;
+  border-color: #888;
+}
+
+/* Playground */
+#playground-canvas {
+  width: 100%; height: 100%;
+  display: block;
+}
+
+.pg-hud {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.pg-piece-name {
+  font-family: 'Bigshot One', cursive;
+  font-size: 1.3rem;
+  letter-spacing: 3px;
+}
+
+.pg-piece-keys {
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 1px;
+}
+
+.pg-health-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.pg-ammo {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.pg-pause {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 50;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pg-pause-box {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem 3rem;
+  background: #111;
+  border: 1px solid #333;
+}
+
+.pg-pause-title {
+  font-family: 'Bigshot One', cursive;
+  font-size: 1.5rem;
+  color: #fff;
+  letter-spacing: 3px;
+  margin-bottom: 0.5rem;
+}
+
 /* Chess Board */
 .chess-container {
   --board-size: min(85vmin, 560px);

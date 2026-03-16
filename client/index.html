@@ -41,7 +41,59 @@
           <button id="btn-join-confirm" class="lobby-btn lobby-btn-primary lobby-btn-sm">Join</button>
         </div>
         <p id="lobby-error" class="lobby-error hidden"></p>
+        <div class="lobby-divider"></div>
+        <button id="btn-playground" class="lobby-btn lobby-btn-playground">
+          <span class="lobby-btn-icon">&#9654;</span>
+          Playground
+        </button>
       </div>
+    </div>
+  </div>
+
+  <div id="screen-playground" class="screen">
+    <canvas id="playground-canvas"></canvas>
+    <div id="crosshair-pg" class="crosshair">
+      <div class="crosshair-line crosshair-top"></div>
+      <div class="crosshair-line crosshair-right"></div>
+      <div class="crosshair-line crosshair-bottom"></div>
+      <div class="crosshair-line crosshair-left"></div>
+      <div class="crosshair-dot"></div>
+    </div>
+    <div id="pg-hud" class="pg-hud">
+      <div class="pg-piece-name" id="pg-piece-name">PAWN</div>
+      <div class="pg-piece-keys">1 Pawn &middot; 2 Knight &middot; 3 Bishop &middot; 4 Rook &middot; 5 Queen &middot; 6 King</div>
+      <div class="pg-health-row">
+        <div class="health-bar" style="width:150px">
+          <div id="pg-health-fill" class="health-fill"></div>
+        </div>
+        <span id="pg-health-text">100</span>
+      </div>
+      <div class="pg-ammo" id="pg-ammo">12 / 12</div>
+    </div>
+    <div id="pg-ult-hud" class="ability-hud">
+      <div class="ult-indicator">
+        <div id="pg-ult-key" class="ult-key">Q</div>
+        <div id="pg-ult-status" class="ult-status">CHARGING</div>
+        <div id="pg-ult-timer" class="ult-timer"></div>
+      </div>
+    </div>
+    <div id="pg-pause" class="pg-pause hidden">
+      <div class="pg-pause-box">
+        <h2 class="pg-pause-title">PAUSED</h2>
+        <button id="btn-pg-resume" class="lobby-btn lobby-btn-sm" style="background:#fff;color:#111;border-color:#fff;">Resume</button>
+        <button id="btn-pg-exit" class="lobby-btn lobby-btn-sm" style="margin-top:0.5rem;">Exit Playground</button>
+      </div>
+    </div>
+    <div id="pg-charge-bar" class="charge-bar-container hidden">
+      <div id="pg-charge-fill" class="charge-fill"></div>
+    </div>
+    <div id="pg-reload-spinner" class="reload-spinner hidden">
+      <div class="reload-label">Reloading</div>
+      <div class="spinner-ring"></div>
+    </div>
+    <div id="pg-scope" class="scope-overlay hidden"></div>
+    <div id="pg-reddot" class="reddot-overlay hidden">
+      <div class="reddot-dot"></div>
     </div>
   </div>
 
@@ -244,6 +296,7 @@
   <script src="js/fps/hud.js"></script>
   <script src="js/fps/abilities.js"></script>
   <script src="js/fps/index.js"></script>
+  <script src="js/playground.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
