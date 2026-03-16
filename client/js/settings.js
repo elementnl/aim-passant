@@ -1,5 +1,12 @@
 const Settings = (() => {
-  const DEFAULTS = { graphics: 'high' };
+  const DEFAULTS = {
+    graphics: 'high',
+    masterVolume: 1.0,
+    musicVolume: 0.1,
+    sfxVolume: 1.0,
+    sensitivity: 1.0,
+    scopedSensitivity: 0.4,
+  };
   let current = { ...DEFAULTS };
 
   function load() {
@@ -20,7 +27,9 @@ const Settings = (() => {
     save();
   }
 
+  function getAll() { return { ...current }; }
+
   load();
 
-  return { get, set };
+  return { get, set, getAll, DEFAULTS };
 })();

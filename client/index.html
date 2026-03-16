@@ -5,40 +5,106 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aim Passant</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bigshot+One&family=Syne+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="screen-lobby" class="screen active">
-    <div class="lobby-container">
-      <h1 class="title">AIM PASSANT</h1>
-      <p class="subtitle">FPS Chess in Your Browser</p>
-      <div class="lobby-actions">
-        <div class="lobby-section">
-          <button id="btn-create" class="btn btn-primary">Create Room</button>
-          <div id="create-options" class="hidden">
-            <input type="text" id="input-room-name-create" placeholder="Room Name" class="input" maxlength="30" autocomplete="off" data-1p-ignore data-lpignore="true">
-            <input type="text" id="input-password-create" placeholder="Password (optional)" class="input" autocomplete="off" data-1p-ignore data-lpignore="true">
-            <button id="btn-create-confirm" class="btn">Create</button>
-          </div>
+    <button id="btn-open-settings" class="lobby-settings-btn">&#9881;</button>
+    <div class="lobby-hero">
+      <canvas id="lobby-bg-canvas"></canvas>
+      <div class="lobby-content">
+        <h1 class="lobby-title">AIM PASSANT</h1>
+        <p class="lobby-tagline">FPS Chess in Your Browser</p>
+        <div class="lobby-version">CLOSED BETA</div>
+        <div class="lobby-buttons">
+          <button id="btn-create" class="lobby-btn lobby-btn-primary">
+            <span class="lobby-btn-icon">+</span>
+            Create a Lobby
+          </button>
+          <button id="btn-join" class="lobby-btn lobby-btn-secondary">
+            <span class="lobby-btn-icon">&#8594;</span>
+            Join a Lobby
+          </button>
         </div>
-        <div class="divider">or</div>
-        <div class="lobby-section">
-          <button id="btn-join" class="btn btn-primary">Join Room</button>
-          <div id="join-options" class="hidden">
-            <input type="text" id="input-room-name-join" placeholder="Room Name" class="input" maxlength="30" autocomplete="off" data-1p-ignore data-lpignore="true">
-            <input type="text" id="input-password-join" placeholder="Password (if any)" class="input" autocomplete="off" data-1p-ignore data-lpignore="true">
-            <button id="btn-join-confirm" class="btn">Join</button>
-          </div>
+        <div id="create-options" class="lobby-form hidden">
+          <div class="lobby-form-label">Create a new lobby</div>
+          <input type="text" id="input-room-name-create" placeholder="Lobby Name" class="lobby-input" maxlength="30" autocomplete="off" data-1p-ignore data-lpignore="true">
+          <input type="text" id="input-password-create" placeholder="Password (optional)" class="lobby-input" autocomplete="off" data-1p-ignore data-lpignore="true">
+          <button id="btn-create-confirm" class="lobby-btn lobby-btn-primary lobby-btn-sm">Create</button>
         </div>
+        <div id="join-options" class="lobby-form hidden">
+          <div class="lobby-form-label">Join an existing lobby</div>
+          <input type="text" id="input-room-name-join" placeholder="Lobby Name" class="lobby-input" maxlength="30" autocomplete="off" data-1p-ignore data-lpignore="true">
+          <input type="text" id="input-password-join" placeholder="Password (optional)" class="lobby-input" autocomplete="off" data-1p-ignore data-lpignore="true">
+          <button id="btn-join-confirm" class="lobby-btn lobby-btn-primary lobby-btn-sm">Join</button>
+        </div>
+        <p id="lobby-error" class="lobby-error hidden"></p>
       </div>
-      <p id="lobby-error" class="error hidden"></p>
-      <button id="btn-settings" class="btn settings-btn">Settings</button>
-      <div id="settings-panel" class="settings-panel hidden">
-        <div class="settings-row">
-          <span class="settings-label">Graphics</span>
-          <div class="settings-options">
-            <button class="btn settings-opt" data-setting="graphics" data-value="low">Low</button>
-            <button class="btn settings-opt" data-setting="graphics" data-value="medium">Medium</button>
-            <button class="btn settings-opt active" data-setting="graphics" data-value="high">High</button>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Settings</h2>
+        <button id="btn-close-settings" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="graphics">Graphics</button>
+        <button class="modal-tab" data-tab="sound">Sound</button>
+        <button class="modal-tab" data-tab="controls">Controls</button>
+      </div>
+      <div class="modal-body">
+        <div id="tab-graphics" class="tab-panel active">
+          <div class="setting-group">
+            <label class="setting-label">Quality</label>
+            <div class="setting-buttons">
+              <button class="setting-btn" data-setting="graphics" data-value="low">Low</button>
+              <button class="setting-btn" data-setting="graphics" data-value="medium">Medium</button>
+              <button class="setting-btn active" data-setting="graphics" data-value="high">High</button>
+            </div>
+          </div>
+        </div>
+        <div id="tab-sound" class="tab-panel">
+          <div class="setting-group">
+            <label class="setting-label">Master Volume</label>
+            <div class="setting-slider-row">
+              <input type="range" id="slider-masterVolume" class="setting-slider" min="0" max="100" value="100">
+              <span id="val-masterVolume" class="setting-val">100%</span>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Music Volume</label>
+            <div class="setting-slider-row">
+              <input type="range" id="slider-musicVolume" class="setting-slider" min="0" max="100" value="10">
+              <span id="val-musicVolume" class="setting-val">10%</span>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">SFX Volume</label>
+            <div class="setting-slider-row">
+              <input type="range" id="slider-sfxVolume" class="setting-slider" min="0" max="100" value="100">
+              <span id="val-sfxVolume" class="setting-val">100%</span>
+            </div>
+          </div>
+        </div>
+        <div id="tab-controls" class="tab-panel">
+          <div class="setting-group">
+            <label class="setting-label">Mouse Sensitivity</label>
+            <div class="setting-slider-row">
+              <input type="range" id="slider-sensitivity" class="setting-slider" min="10" max="300" value="100">
+              <span id="val-sensitivity" class="setting-val">1.00</span>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Scoped Sensitivity</label>
+            <div class="setting-slider-row">
+              <input type="range" id="slider-scopedSensitivity" class="setting-slider" min="10" max="100" value="40">
+              <span id="val-scopedSensitivity" class="setting-val">0.40</span>
+            </div>
           </div>
         </div>
       </div>
@@ -160,6 +226,7 @@
   <script src="/shared/pieces.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/lobby-bg.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/network.js"></script>
   <script src="js/lobby.js"></script>

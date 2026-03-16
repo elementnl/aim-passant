@@ -16,11 +16,13 @@ const Game = (() => {
 
   function init() {
     Audio.preload();
+    LobbyBG.init();
     Lobby.init();
     FPS.init();
 
     Network.on('game-start', ({ chess }) => {
       gameOverPending = false;
+      LobbyBG.stop();
       myColor = Lobby.getMyColor();
       ChessUI.init(myColor);
       ChessUI.update(chess);

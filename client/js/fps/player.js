@@ -138,7 +138,9 @@ const FPSPlayer = (() => {
     }
 
     const mouse = FPSInput.consumeMouse();
-    const sensMult = FPSGun.getIsADS() ? 0.4 : 1;
+    const baseSens = Settings.get('sensitivity') || 1;
+    const scopedSens = Settings.get('scopedSensitivity') || 0.4;
+    const sensMult = FPSGun.getIsADS() ? scopedSens : baseSens;
     rotation.yaw -= mouse.x * MOUSE_SENSITIVITY * sensMult;
     rotation.pitch -= mouse.y * MOUSE_SENSITIVITY * sensMult;
     rotation.pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, rotation.pitch));

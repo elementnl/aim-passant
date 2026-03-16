@@ -148,7 +148,7 @@ const ChessUI = (() => {
       el.style.color = '#c0392b';
     } else {
       el.textContent = `${state.turn.toUpperCase()}'s turn`;
-      el.style.color = isMyTurn ? '#222' : '#999';
+      el.style.color = isMyTurn ? '#fff' : '#666';
     }
   }
 
