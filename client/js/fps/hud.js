@@ -49,7 +49,7 @@ const FPSHUD = (() => {
 
   function updateAmmo(current, max) {
     const el = document.getElementById('ammo-text');
-    if (max === Infinity) {
+    if (max === Infinity || max === null || max === undefined || !isFinite(max)) {
       el.textContent = '\u221E';
     } else {
       el.textContent = `${current} / ${max}`;
@@ -137,8 +137,40 @@ const FPSHUD = (() => {
     }, FPSConfig.COUNTDOWN_INTERVAL);
   }
 
+  const ULT_NAMES = {
+    p: 'Flashbang', n: 'Explosive Arrow', b: 'Disarm',
+    r: 'Invisibility', q: 'Fireball', k: 'Airstrike',
+  };
+
+  function initAbilityHUD(pieceType) {
+    const status = document.getElementById('ult-status');
+    status.textContent = ULT_NAMES[pieceType] || 'ULTIMATE';
+    status.classList.remove('ready');
+    document.getElementById('ult-key').classList.remove('ready');
+    document.getElementById('ult-timer').textContent = '';
+  }
+
+  function updateAbilityHUD(ultReady, ultCooldownEnd, now) {
+    const key = document.getElementById('ult-key');
+    const status = document.getElementById('ult-status');
+    const timer = document.getElementById('ult-timer');
+
+    if (ultReady) {
+      key.classList.add('ready');
+      status.classList.add('ready');
+      status.textContent = 'READY';
+      timer.textContent = '';
+    } else {
+      key.classList.remove('ready');
+      status.classList.remove('ready');
+      const remaining = Math.max(0, Math.ceil((ultCooldownEnd - now) / 1000));
+      status.textContent = 'CHARGING';
+      timer.textContent = remaining + 's';
+    }
+  }
+
   return {
     showIntro, updateHealth, updateAmmo, showReloading, showChargeBar, updateChargeBar,
-    showScope, setWeaponInfo, flashDamage, showCountdown,
+    showScope, setWeaponInfo, flashDamage, showCountdown, initAbilityHUD, updateAbilityHUD,
   };
 })();

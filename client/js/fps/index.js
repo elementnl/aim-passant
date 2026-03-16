@@ -3,7 +3,9 @@ const FPS = (() => {
   let duelReady = false;
   let myStats = null;
   let myHP = 0;
+  let myMaxHP = 0;
   let myRole = null;
+  let myPiece = null;
   let syncInterval = null;
   let lastTime = 0;
   let dying = false;
@@ -37,8 +39,10 @@ const FPS = (() => {
     const isAttacker = duelInfo.myRole === 'attacker';
     myRole = duelInfo.myRole;
     myStats = isAttacker ? duelInfo.attacker.stats : duelInfo.defender.stats;
+    myPiece = isAttacker ? duelInfo.attacker.piece : duelInfo.defender.piece;
     const myCurrentHP = isAttacker ? duelInfo.attacker.currentHP : duelInfo.defender.currentHP;
     myHP = myCurrentHP !== undefined ? myCurrentHP : myStats.hp;
+    myMaxHP = myStats.hp;
 
     rebuildArena(duelInfo.arenaIndex);
 
@@ -46,6 +50,7 @@ const FPS = (() => {
     const mySpawn = isAttacker ? duelInfo.spawns.attacker : duelInfo.spawns.defender;
     FPSPlayer.spawn(mySpawn);
     FPSPlayer.setJumpSpeed(myStats.jumpSpeed);
+    FPSPlayer.setDoubleJump(myPiece === 'n');
     const opponentInfo = isAttacker ? duelInfo.defender : duelInfo.attacker;
     FPSOpponent.create(FPSRenderer.getScene(), isAttacker, opponentPiece);
     FPSOpponent.setHP(
@@ -58,7 +63,7 @@ const FPS = (() => {
     FPSGun.destroy();
     FPSGun.create(FPSRenderer.getCamera(), myStats.weapon.type);
 
-    FPSHUD.updateHealth(myHP, myStats.hp);
+    FPSHUD.updateHealth(myHP, myMaxHP);
     FPSHUD.updateAmmo(FPSShooting.getAmmo(), FPSShooting.getMaxAmmo());
     FPSHUD.showReloading(false);
     FPSHUD.showChargeBar(false);
@@ -73,6 +78,7 @@ const FPS = (() => {
         FPSInput.requestPointerLock();
         return;
       }
+      if (FPSAbilities.isDisarmed()) return;
       if (e.button === 0) {
         mouseDown = true;
         FPSShooting.onMouseDown(FPSRenderer.getCamera(), FPSOpponent.getMesh(), myStats, coverMeshes);
@@ -104,6 +110,8 @@ const FPS = (() => {
       FPSInput.requestPointerLock();
       FPSHUD.showCountdown(() => {
         duelReady = true;
+        Audio.playMusic();
+        FPSAbilities.init(myPiece, performance.now());
         syncInterval = setInterval(() => {
           if (active && !dying) Network.sendDuelState(FPSPlayer.getState());
         }, FPSConfig.SYNC_RATE);
@@ -115,10 +123,19 @@ const FPS = (() => {
       FPSShooting.showOpponentTracer(FPSRenderer.getScene(), data);
     });
     Network.on('duel-take-damage', onTakeDamage);
+    Network.on('duel-opponent-ability', (data) => FPSAbilities.onOpponentAbility(data));
+    Network.on('duel-opponent-effect', (data) => {
+      FPSAbilities.onOpponentEffect(data);
+    });
+
+    FPSAbilities.setSelfDamageCallback((damage) => {
+      applyDamage(damage);
+    });
   }
 
   function handleADSStart() {
     if (FPSGun.isReloading()) return;
+    if (FPSAbilities.isDisarmed()) return;
     const wType = myStats.weapon.type;
     if (wType === 'sniper') {
       FPSGun.setADS(true);
@@ -154,8 +171,18 @@ const FPS = (() => {
     if (duelReady && !dying) {
       FPSPlayer.update(dt, myStats.speed);
       if (FPSInput.isDown('r')) FPSShooting.tryReload();
-      if (mouseDown) {
+      if (FPSInput.isDown('q')) FPSAbilities.tryUlt();
+      if (mouseDown && !FPSAbilities.isDisarmed()) {
         FPSShooting.onMouseHeld(FPSRenderer.getCamera(), FPSOpponent.getMesh(), myStats, coverMeshes);
+      }
+
+      FPSAbilities.update(dt);
+
+      if (FPSAbilities.getPieceType() === 'p') {
+        const regenResult = FPSAbilities.update.__regenCheck;
+        if (myHP < myMaxHP) {
+          myHP = Math.min(myHP + 1.5 * dt, myMaxHP);
+        }
       }
     }
 
@@ -166,23 +193,63 @@ const FPS = (() => {
     FPSShooting.updateBloom(dt);
     FPSShooting.updateChargeBar();
     FPSEffects.update(dt);
-    FPSHUD.updateHealth(myHP, myStats.hp);
+    FPSHUD.updateHealth(myHP, myMaxHP);
     FPSRenderer.render();
 
     requestAnimationFrame(gameLoop);
   }
 
-  function onTakeDamage({ damage, headshot }) {
-    myHP -= damage;
+  function applyDamage(damage) {
+    const processed = FPSAbilities.processDamage(damage, false);
+    if (processed <= 0) return;
+    myHP -= processed;
     FPSHUD.flashDamage();
     Audio.play('damage');
 
     if (myHP <= 0) {
+      if (FPSAbilities.canBishopResurrect() && !dying) {
+        handleBishopResurrect();
+        return;
+      }
       myHP = 0;
       dying = true;
       const winner = myRole === 'attacker' ? 'defender' : 'attacker';
       Network.sendDuelResult(winner);
     }
+  }
+
+  function onTakeDamage({ damage, headshot }) {
+    const processed = FPSAbilities.processDamage(damage, headshot);
+    if (processed <= 0) return;
+
+    myHP -= processed;
+    FPSHUD.flashDamage();
+    Audio.play('damage');
+
+    if (myHP <= 0) {
+      if (FPSAbilities.canBishopResurrect() && !dying) {
+        handleBishopResurrect();
+        return;
+      }
+      myHP = 0;
+      dying = true;
+      const winner = myRole === 'attacker' ? 'defender' : 'attacker';
+      Network.sendDuelResult(winner);
+    }
+  }
+
+  function handleBishopResurrect() {
+    FPSAbilities.useBishopResurrect();
+    myHP = 40;
+    Audio.play('bishopResurrect');
+    Network.emit('duel-ability-effect', { effect: 'bishopResurrect' });
+
+    const half = FPSConfig.ARENA_SIZE / 2 - 2;
+    const x = (Math.random() - 0.5) * 2 * half;
+    const z = (Math.random() - 0.5) * 2 * half;
+
+    FPSPlayer.spawn({ x, z, yaw: Math.random() * Math.PI * 2 });
+    FPSHUD.updateHealth(myHP, myMaxHP);
   }
 
   function showDeathExplosion(loserIsMe) {
@@ -211,6 +278,8 @@ const FPS = (() => {
     dying = false;
     mouseDown = false;
 
+    Audio.stopMusic();
+    FPSAbilities.cleanup();
     FPSHUD.showScope(false);
     FPSHUD.showChargeBar(false);
     FPSRenderer.setFOV(90);
@@ -230,6 +299,8 @@ const FPS = (() => {
     Network.off('duel-opponent-state');
     Network.off('duel-opponent-shoot');
     Network.off('duel-take-damage');
+    Network.off('duel-opponent-ability');
+    Network.off('duel-opponent-effect');
 
     setTimeout(() => {
       active = false;

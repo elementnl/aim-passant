@@ -15,6 +15,7 @@ const Audio = (() => {
     chessMove:      { src: 'sounds/chess-move.mp3',     volume: 0.5 },
     reload:         { src: 'sounds/reload.mp3',         volume: 0.5 },
     emptyClick:     { src: 'sounds/empty-click.mp3',    volume: 0.4 },
+    outOfAmmo:      { src: 'sounds/out-of-ammo.mp3',   volume: 0.5 },
     wallImpact:     { src: 'sounds/wall-impact.mp3',    volume: 0.3 },
 
     footstep1:      { src: 'sounds/footstep-1.wav',     volume: 0.25 },
@@ -39,7 +40,31 @@ const Audio = (() => {
 
     deagleFire:     { src: 'sounds/deagle-fire.mp3',    volume: 0.5 },
     deagleReload:   { src: 'sounds/deagle-reload.mp3',  volume: 0.5 },
-    duelStart:      { src: 'sounds/duel-start.mp3',    volume: 0.7 },
+    duelStart:      { src: 'sounds/duel-start.mp3',     volume: 0.7 },
+
+    pawnFlashbang:    { src: 'sounds/pawn-flashbang.wav',     volume: 0.6 },
+    knightUltCharge:  { src: 'sounds/knight-ult-charge.mp3',  volume: 0.5 },
+    knightUltShot:    { src: 'sounds/knight-ult-shot.wav',    volume: 0.5 },
+    explosionRocket:  { src: 'sounds/explosion-rocket.wav',   volume: 0.6 },
+    bishopResurrect:  { src: 'sounds/bishop-resurrect.mp3',   volume: 0.6 },
+    bishopSpell:      { src: 'sounds/bishop-spell.mp3',       volume: 0.6 },
+    rookCloak:        { src: 'sounds/rook-cloak.mp3',         volume: 0.5 },
+    whoosh:           { src: 'sounds/whoosh.wav',             volume: 0.2 },
+    wallhackPulse:    { src: 'sounds/wallhack-pulse.mp3',     volume: 0.3 },
+    fireballLaunch:   { src: 'sounds/fireball-launch.mp3',    volume: 0.6 },
+    fireballImpact:   { src: 'sounds/fireball-impact.mp3',    volume: 0.6 },
+    forcefieldOn:     { src: 'sounds/forcefield-on.mp3',      volume: 0.25 },
+    airstrikeCall:    { src: 'sounds/airstrike-call.wav',     volume: 0.6 },
+    airstrikeBoom:    { src: 'sounds/airstrike-boom.mp3',     volume: 0.7 },
+    ultReady:         { src: 'sounds/ult-ready.mp3',          volume: 0.6 },
+
+    voicePawnUlt:     { src: 'sounds/voice-pawn-ult.wav',     volume: 0.7 },
+    voiceKnightHorse: { src: 'sounds/voice-knight-horse.wav', volume: 0.6 },
+    voiceKnightUlt:   { src: 'sounds/voice-knight-ult.wav',   volume: 0.7 },
+    voiceBishopUlt:   { src: 'sounds/voice-bishop-ult.mp3',   volume: 0.7 },
+    voiceRookUlt:     { src: 'sounds/voice-rook-ult.wav',     volume: 0.7 },
+    voiceQueenUlt:    { src: 'sounds/voice-queen-ult.mp3',    volume: 0.7 },
+    voiceKingUlt:     { src: 'sounds/voice-king-ult.mp3',     volume: 0.7 },
   };
 
   function preload() {
@@ -50,6 +75,8 @@ const Audio = (() => {
     }
   }
 
+  const activeSounds = {};
+
   function play(name) {
     const entry = sounds[name];
     if (!entry) return;
@@ -57,6 +84,35 @@ const Audio = (() => {
     const clone = entry.audio.cloneNode();
     clone.volume = entry.baseVolume * masterVolume;
     clone.play().catch(() => {});
+    activeSounds[name] = clone;
+    return clone;
+  }
+
+  function stop(name) {
+    if (activeSounds[name]) {
+      activeSounds[name].pause();
+      activeSounds[name].currentTime = 0;
+      delete activeSounds[name];
+    }
+  }
+
+  let bgMusic = null;
+
+  function playMusic() {
+    if (!bgMusic) {
+      bgMusic = new window.Audio('sounds/bg-music.mp3');
+      bgMusic.loop = true;
+    }
+    bgMusic.volume = 0.1 * masterVolume;
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
+  }
+
+  function stopMusic() {
+    if (bgMusic) {
+      bgMusic.pause();
+      bgMusic.currentTime = 0;
+    }
   }
 
   function setMasterVolume(vol) {
@@ -69,5 +125,5 @@ const Audio = (() => {
     }
   }
 
-  return { preload, play, setMasterVolume, setVolume };
+  return { preload, play, stop, playMusic, stopMusic, setMasterVolume, setVolume };
 })();

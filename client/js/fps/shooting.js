@@ -22,7 +22,7 @@ const FPSShooting = (() => {
     shotgun: { perShot: 0.01,  max: 0.03,  decay: 0.05,  recoilUp: 0.004, recoilSide: 0.001 },
   };
   const BASE_CROSSHAIR_SIZE = {
-    pistol: 24, bow: 22, shotgun: 50, sniper: 80, ar: 24, deagle: 26,
+    pistol: 24, bow: 22, shotgun: 65, sniper: 80, ar: 24, deagle: 26,
   };
 
   const BULLET_SPEED = 80;
@@ -31,8 +31,8 @@ const FPSShooting = (() => {
 
   function init(stats) {
     weapon = stats.weapon;
-    maxAmmo = weapon.magSize;
-    ammo = maxAmmo;
+    maxAmmo = (weapon.magSize === null || weapon.magSize === undefined) ? Infinity : weapon.magSize;
+    ammo = maxAmmo === Infinity ? Infinity : maxAmmo;
     isReloading = false;
     charging = false;
     mouseHeld = false;
@@ -53,6 +53,7 @@ const FPSShooting = (() => {
 
   function onMouseDown(camera, opponentMesh, stats, coverMeshes) {
     mouseHeld = true;
+    if (FPSAbilities.isDisarmed()) return;
     if (weapon.type === 'bow') {
       startCharge();
       return;
@@ -71,7 +72,7 @@ const FPSShooting = (() => {
   }
 
   function onMouseHeld(camera, opponentMesh, stats, coverMeshes) {
-    if (!mouseHeld || !weapon.auto) return;
+    if (!mouseHeld || !weapon.auto || FPSAbilities.isDisarmed()) return;
     tryShoot(camera, opponentMesh, stats, coverMeshes);
   }
 
@@ -79,7 +80,11 @@ const FPSShooting = (() => {
     if (isReloading || FPSGun.isReloading()) return;
     charging = true;
     chargeStart = performance.now();
-    Audio.play('bowDraw');
+    if (FPSAbilities.isKnightUltActive()) {
+      Audio.play('knightUltCharge');
+    } else {
+      Audio.play('bowDraw');
+    }
     FPSHUD.showChargeBar(true);
     FPSGun.setBowDraw(0);
   }
@@ -99,9 +104,99 @@ const FPSShooting = (() => {
     const damage = weapon.damageMin + (weapon.damageMax - weapon.damageMin) * chargePercent;
 
     FPSGun.bowRelease();
-    Audio.play('bowRelease');
-    fireBullet(camera, opponentMesh, Math.round(damage), 0, coverMeshes);
+    const isExplosive = FPSAbilities.isKnightUltActive();
+    Audio.stop('knightUltCharge');
+    Audio.stop('bowDraw');
+    Audio.play(isExplosive ? 'knightUltShot' : 'bowRelease');
+    if (isExplosive) FPSAbilities.consumeKnightUlt();
+    fireArrow(camera, opponentMesh, Math.round(damage), coverMeshes, isExplosive);
     Network.sendDuelShoot(FPSPlayer.getState());
+  }
+
+  function fireArrow(camera, opponentMesh, damage, coverMeshes, explosive) {
+    if (!explosive) {
+      fireBullet(camera, opponentMesh, damage, 0, coverMeshes);
+      return;
+    }
+
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const origin = camera.position.clone().add(dir.clone().multiplyScalar(0.8));
+    const scene = FPSRenderer.getScene();
+
+    const arrowGeo = new THREE.SphereGeometry(0.25, 8, 6);
+    const arrowMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+    const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+    const glow = new THREE.PointLight(0xff4400, 2, 8);
+    arrow.add(glow);
+    arrow.position.copy(origin);
+    scene.add(arrow);
+
+    const speed = 35;
+    let dist = 0;
+    const half = FPSConfig.ARENA_SIZE / 2;
+
+    function explodeAt(pos) {
+      scene.remove(arrow);
+      Network.emit('duel-ability-effect', {
+        effect: 'explosiveArrow',
+        data: { x: pos.x, y: pos.y, z: pos.z },
+      });
+      Audio.play('explosionRocket');
+      FPSEffects.explode(scene, pos, 0xff6600);
+
+      if (opponentMesh) {
+        const opPos = new THREE.Vector3();
+        opponentMesh.getWorldPosition(opPos);
+        const d = pos.distanceTo(opPos);
+        const radius = 5;
+        if (d < radius) {
+          const falloff = 1 - (d / radius);
+          const dmg = Math.round(damage * falloff);
+          if (dmg > 0) {
+            Network.sendDuelHit(dmg, false, FPS.getMyHP());
+            FPSOpponent.flashWhite();
+            FPSOpponent.takeDamage(dmg);
+          }
+        }
+      }
+    }
+
+    const animate = () => {
+      const step = speed * 0.016;
+      dist += step;
+      arrow.position.addScaledVector(dir, step);
+      const p = arrow.position;
+
+      if (p.y <= 0.1 || Math.abs(p.x) > half || Math.abs(p.z) > half) {
+        explodeAt(p.clone());
+        return;
+      }
+
+      if (opponentMesh) {
+        const opPos = new THREE.Vector3();
+        opponentMesh.getWorldPosition(opPos);
+        if (p.distanceTo(opPos) < 1.5) {
+          explodeAt(p.clone());
+          return;
+        }
+      }
+
+      const colliders = FPSArena.getColliders();
+      for (const c of colliders) {
+        if (p.x > c.minX && p.x < c.maxX && p.y > c.minY && p.y < c.maxY &&
+            p.z > c.minZ && p.z < c.maxZ) {
+          explodeAt(p.clone());
+          return;
+        }
+      }
+
+      if (dist >= 60) {
+        explodeAt(p.clone());
+        return;
+      }
+      requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
   }
 
   function tryShoot(camera, opponentMesh, stats, coverMeshes) {
@@ -113,6 +208,8 @@ const FPSShooting = (() => {
       const now = performance.now();
       if (now - lastShotTime > 300) {
         Audio.play('emptyClick');
+        Audio.play('outOfAmmo');
+        showOutOfAmmo();
         lastShotTime = now;
       }
       return;
@@ -395,6 +492,22 @@ const FPSShooting = (() => {
     );
     const start = origin.add(dir.clone().multiplyScalar(0.8));
     spawnBullet(scene, start, dir, 0xff4444);
+  }
+
+  function showOutOfAmmo() {
+    let el = document.getElementById('out-of-ammo');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.id = 'out-of-ammo';
+    el.style.cssText =
+      'position:fixed;top:60%;left:50%;transform:translate(-50%,-50%);' +
+      'color:#e74c3c;font-size:1rem;font-weight:bold;z-index:16;' +
+      'pointer-events:none;text-shadow:0 0 10px rgba(231,76,60,0.5);' +
+      'letter-spacing:2px;opacity:1;transition:opacity 0.5s;';
+    el.textContent = 'OUT OF AMMO — PRESS R';
+    document.body.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; }, 800);
+    setTimeout(() => { el.remove(); }, 1300);
   }
 
   function showHitMarker(isHeadshot) {

@@ -24,6 +24,18 @@ module.exports = function registerDuelHandlers(io, socket) {
     socket.to(room.key).emit('duel-take-damage', { damage, headshot });
   });
 
+  socket.on('duel-ability', (data) => {
+    const room = rooms.getByPlayer(socket.id);
+    if (!room || room.state !== 'duel') return;
+    socket.to(room.key).emit('duel-opponent-ability', data);
+  });
+
+  socket.on('duel-ability-effect', (data) => {
+    const room = rooms.getByPlayer(socket.id);
+    if (!room || room.state !== 'duel') return;
+    socket.to(room.key).emit('duel-opponent-effect', data);
+  });
+
   socket.on('duel-result', ({ winner }) => {
     const room = rooms.getByPlayer(socket.id);
     if (!room || room.state !== 'duel') return;

@@ -4,6 +4,9 @@ const FPSPlayer = (() => {
   const rotation = { yaw: 0, pitch: 0 };
   let onGround = true;
   let jumpSpeed = FPSConfig.JUMP_SPEED;
+  let canDoubleJump = false;
+  let doubleJumpUsed = false;
+  let spaceWasDown = false;
 
   const PLAYER_RADIUS = 0.3;
   const FOOTSTEP_INTERVAL = 0.35;
@@ -17,6 +20,8 @@ const FPSPlayer = (() => {
     velocity.set(0, 0, 0);
     rotation.pitch = 0;
     onGround = true;
+    doubleJumpUsed = false;
+    spaceWasDown = true;
     footstepTimer = 0;
   }
 
@@ -71,10 +76,19 @@ const FPSPlayer = (() => {
     velocity.x = moveDir.x * speed;
     velocity.z = moveDir.z * speed;
 
-    if (FPSInput.isDown(' ') && onGround) {
+    const spaceDown = FPSInput.isDown(' ');
+    const spacePressed = spaceDown && !spaceWasDown;
+
+    if (spacePressed && onGround) {
       velocity.y = jumpSpeed;
       onGround = false;
+      doubleJumpUsed = false;
+    } else if (spacePressed && !onGround && canDoubleJump && !doubleJumpUsed) {
+      velocity.y = jumpSpeed;
+      doubleJumpUsed = true;
     }
+
+    spaceWasDown = spaceDown;
     velocity.y += GRAVITY * dt;
 
     const half = ARENA_SIZE / 2 - 0.5;
@@ -124,8 +138,9 @@ const FPSPlayer = (() => {
     }
 
     const mouse = FPSInput.consumeMouse();
-    rotation.yaw -= mouse.x * MOUSE_SENSITIVITY;
-    rotation.pitch -= mouse.y * MOUSE_SENSITIVITY;
+    const sensMult = FPSGun.getIsADS() ? 0.4 : 1;
+    rotation.yaw -= mouse.x * MOUSE_SENSITIVITY * sensMult;
+    rotation.pitch -= mouse.y * MOUSE_SENSITIVITY * sensMult;
     rotation.pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, rotation.pitch));
   }
 
@@ -145,5 +160,12 @@ const FPSPlayer = (() => {
 
   function isOnGround() { return onGround; }
 
-  return { spawn, setJumpSpeed, update, applyToCamera, getState, isOnGround, position, rotation };
+  function setDoubleJump(enabled) { canDoubleJump = enabled; }
+
+  function forceJump() {
+    velocity.y = jumpSpeed;
+    onGround = false;
+  }
+
+  return { spawn, setJumpSpeed, setDoubleJump, update, applyToCamera, getState, isOnGround, forceJump, position, rotation };
 })();

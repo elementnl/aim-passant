@@ -374,6 +374,60 @@ body {
   font-weight: bold;
 }
 
+/* Ability HUD */
+.ability-hud {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.ult-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+}
+
+.ult-key {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.ult-key.ready {
+  background: rgba(46, 204, 113, 0.4);
+  border-color: #2ecc71;
+  color: #2ecc71;
+}
+
+.ult-status {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ult-status.ready {
+  color: #2ecc71;
+}
+
+.ult-timer {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
+}
+
 /* HUD */
 .duel-hud {
   position: absolute;

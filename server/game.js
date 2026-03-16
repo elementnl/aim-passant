@@ -84,6 +84,16 @@ function makeMove(room, from, to, promotion) {
   room.pieceHP[to] = room.pieceHP[from];
   delete room.pieceHP[from];
 
+  if (move.flags.includes('k')) {
+    const rank = move.color === 'w' ? '1' : '8';
+    room.pieceHP['f' + rank] = room.pieceHP['h' + rank];
+    delete room.pieceHP['h' + rank];
+  } else if (move.flags.includes('q')) {
+    const rank = move.color === 'w' ? '1' : '8';
+    room.pieceHP['d' + rank] = room.pieceHP['a' + rank];
+    delete room.pieceHP['a' + rank];
+  }
+
   return { duel: false, move, state: getChessState(room) };
 }
 

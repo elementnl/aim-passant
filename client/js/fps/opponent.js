@@ -110,6 +110,44 @@ const FPSOpponent = (() => {
     }
   }
 
+  function setVisible(visible) {
+    if (!mesh) return;
+    mesh.traverse(child => {
+      if (child.isMesh) {
+        child.material.transparent = true;
+        child.material.opacity = visible ? 1 : 0.05;
+      }
+    });
+    if (healthBarGroup) {
+      healthBarGroup.visible = visible;
+    }
+  }
+
+  function setOutline(show) {
+    if (!mesh) return;
+    mesh.traverse(child => {
+      if (child.isMesh && child.parent !== healthBarGroup) {
+        if (show) {
+          child.material = new THREE.MeshBasicMaterial({
+            color: 0xff4444,
+            transparent: true,
+            opacity: 0.6,
+            side: THREE.DoubleSide,
+            depthTest: false,
+          });
+        }
+      }
+    });
+    if (show) {
+      setTimeout(() => {
+        if (!mesh) return;
+        originalMaterials.forEach(({ mesh: m, material }) => {
+          m.material = material;
+        });
+      }, 1000);
+    }
+  }
+
   function getMesh() { return mesh; }
 
   function destroy(scene) {
@@ -126,5 +164,5 @@ const FPSOpponent = (() => {
     }
   }
 
-  return { create, setHP, takeDamage, flashWhite, updateFromNetwork, interpolate, getMesh, destroy };
+  return { create, setHP, takeDamage, flashWhite, setVisible, setOutline, updateFromNetwork, interpolate, getMesh, destroy };
 })();

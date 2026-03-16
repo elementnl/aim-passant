@@ -20,6 +20,7 @@ const Game = (() => {
     FPS.init();
 
     Network.on('game-start', ({ chess }) => {
+      gameOverPending = false;
       myColor = Lobby.getMyColor();
       ChessUI.init(myColor);
       ChessUI.update(chess);
@@ -52,26 +53,35 @@ const Game = (() => {
       });
     });
 
+    let gameOverPending = false;
+    let duelEndTimeout = null;
+
     Network.on('duel-end', ({ winner, state }) => {
       FPS.endDuel(winner);
+      Audio.play('explosion');
 
       const myRole = state.turn === myColor ? 'defender' : 'attacker';
       const iWon = (myRole === 'attacker' && winner === 'attacker') ||
                    (myRole === 'defender' && winner === 'defender');
 
-      Audio.play('explosion');
-      setTimeout(() => Audio.play(iWon ? 'duelWin' : 'duelLoss'), 300);
+      duelEndTimeout = setTimeout(() => {
+        if (gameOverPending) return;
+        Audio.play(iWon ? 'duelWin' : 'duelLoss');
+        showDuelResult(iWon);
 
-      showDuelResult(iWon);
-
-      setTimeout(() => {
-        hideDuelResult();
-        ChessUI.update(state);
-        showScreen('chess');
-      }, 2500);
+        setTimeout(() => {
+          if (gameOverPending) return;
+          hideDuelResult();
+          ChessUI.update(state);
+          showScreen('chess');
+        }, 2500);
+      }, 100);
     });
 
     Network.on('game-over', ({ reason, winner }) => {
+      gameOverPending = true;
+      if (duelEndTimeout) clearTimeout(duelEndTimeout);
+      hideDuelResult();
       const delay = FPS.isActive() ? 3000 : 500;
       setTimeout(() => {
         showScreen('gameover');
