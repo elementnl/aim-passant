@@ -25,7 +25,13 @@ const FPSHUD = (() => {
     document.getElementById('intro-defender-piece').style.color =
       defender.color === 'white' ? '#fff' : '#ccc';
 
-    document.getElementById('intro-map-name').textContent = ARENA_NAMES[arenaIndex] || 'Arena';
+    const ACCENT_COLORS = ['#ff8844', '#44aa66', '#ccaa55', '#cc5544'];
+    const mapName = document.getElementById('intro-map-name');
+    mapName.textContent = ARENA_NAMES[arenaIndex] || 'Arena';
+    mapName.style.color = ACCENT_COLORS[arenaIndex] || 'rgba(255,255,255,0.4)';
+
+    const vs = el.querySelector('.intro-vs');
+    if (vs) vs.style.color = ACCENT_COLORS[arenaIndex] || '#e74c3c';
 
     el.classList.remove('hidden');
     Audio.play('duelStart');

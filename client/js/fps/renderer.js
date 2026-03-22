@@ -31,14 +31,16 @@ const FPSRenderer = (() => {
     sun.position.set(5, 20, 5);
     if (useShadows) {
       sun.castShadow = true;
-      sun.shadow.mapSize.width = 1024;
-      sun.shadow.mapSize.height = 1024;
+      sun.shadow.mapSize.width = 2048;
+      sun.shadow.mapSize.height = 2048;
       sun.shadow.camera.near = 0.5;
       sun.shadow.camera.far = 50;
       sun.shadow.camera.left = -25;
       sun.shadow.camera.right = 25;
       sun.shadow.camera.top = 25;
       sun.shadow.camera.bottom = -25;
+      sun.shadow.bias = -0.002;
+      sun.shadow.normalBias = 0.02;
     }
     scene.add(sun);
 
@@ -79,6 +81,7 @@ const FPSRenderer = (() => {
 
   function getScene() { return scene; }
   function getCamera() { return camera; }
+  function getRenderer() { return renderer; }
 
-  return { init, render, setFOV, applySettings, getScene, getCamera };
+  return { init, render, setFOV, applySettings, getScene, getCamera, getRenderer };
 })();

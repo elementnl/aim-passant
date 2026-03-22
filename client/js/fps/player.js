@@ -47,11 +47,12 @@ const FPSPlayer = (() => {
   function getGroundHeight(x, z) {
     const colliders = FPSArena.getColliders();
     let highest = 0;
+    const feetY = position.y - FPSConfig.PLAYER_HEIGHT + 0.1;
 
     for (const c of colliders) {
       if (x + PLAYER_RADIUS > c.minX && x - PLAYER_RADIUS < c.maxX &&
           z + PLAYER_RADIUS > c.minZ && z - PLAYER_RADIUS < c.maxZ) {
-        if (c.maxY > highest) {
+        if (c.maxY > highest && c.maxY <= feetY) {
           highest = c.maxY;
         }
       }
@@ -109,6 +110,12 @@ const FPSPlayer = (() => {
     let newY = position.y + velocity.y * dt;
     const groundHeight = getGroundHeight(position.x, position.z);
     const minY = groundHeight + PLAYER_HEIGHT;
+
+    const ceilingH = FPSArena.getCeilingHeight ? FPSArena.getCeilingHeight() : Infinity;
+    if (newY + 0.2 > ceilingH) {
+      newY = ceilingH - 0.2;
+      velocity.y = 0;
+    }
 
     if (newY <= minY) {
       newY = minY;

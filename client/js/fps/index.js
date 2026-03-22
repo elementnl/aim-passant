@@ -176,7 +176,12 @@ const FPS = (() => {
       FPSGun.setADS(true);
       FPSHUD.showScope(true, 'sniper');
       Audio.play('sniperScope');
-      FPSRenderer.setFOV(30);
+      FPSRenderer.setFOV(15);
+      const scene = FPSRenderer.getScene();
+      if (scene.fog) {
+        scene._savedFogFar = scene.fog.far;
+        scene.fog.far = 200;
+      }
     } else if (wType === 'ar') {
       FPSGun.setADS(true);
       FPSHUD.showScope(true, 'reddot');
@@ -193,7 +198,14 @@ const FPS = (() => {
       FPSGun.setADS(false);
       FPSHUD.showScope(false);
       FPSRenderer.setFOV(90);
-      if (wType === 'sniper') Audio.play('sniperScope');
+      if (wType === 'sniper') {
+        Audio.play('sniperScope');
+        const scene = FPSRenderer.getScene();
+        if (scene.fog && scene._savedFogFar) {
+          scene.fog.far = scene._savedFogFar;
+          delete scene._savedFogFar;
+        }
+      }
     }
   }
 

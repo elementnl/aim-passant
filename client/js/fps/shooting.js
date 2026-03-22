@@ -209,7 +209,7 @@ const FPSShooting = (() => {
 
     const speed = 35;
     let dist = 0;
-    const half = FPSConfig.ARENA_SIZE / 2;
+    const half = (FPSArena.getArenaSize ? FPSArena.getArenaSize() : FPSConfig.ARENA_SIZE) / 2;
 
     function explodeAt(pos) {
       scene.remove(arrow);
@@ -223,9 +223,9 @@ const FPSShooting = (() => {
       if (opponentMesh) {
         const opPos = new THREE.Vector3();
         opponentMesh.getWorldPosition(opPos);
-        const d = pos.distanceTo(opPos);
+        const d2D = Math.sqrt((pos.x - opPos.x) ** 2 + (pos.z - opPos.z) ** 2);
         const radius = 5;
-        if (d < radius) {
+        if (d2D < radius) {
           const dmg = damage;
           if (dmg > 0) {
             Network.sendDuelHit(dmg, false, FPS.getMyHP());
@@ -248,10 +248,15 @@ const FPSShooting = (() => {
         const opPos = new THREE.Vector3();
         opponentMesh.getWorldPosition(opPos);
         const toOp = opPos.clone().sub(arrow.position);
+        toOp.y = 0;
         const distToOp = toOp.length();
         if (distToOp < HOMING_RADIUS && distToOp > 1.5) {
           toOp.normalize();
-          dir.lerp(toOp, HOMING_STRENGTH).normalize();
+          const savedY = dir.y;
+          dir.x += (toOp.x - dir.x) * HOMING_STRENGTH;
+          dir.z += (toOp.z - dir.z) * HOMING_STRENGTH;
+          dir.y = savedY;
+          dir.normalize();
         }
       }
 
@@ -266,7 +271,8 @@ const FPSShooting = (() => {
       if (opponentMesh) {
         const opPos = new THREE.Vector3();
         opponentMesh.getWorldPosition(opPos);
-        if (p.distanceTo(opPos) < 1.5) {
+        const d2D = Math.sqrt((p.x - opPos.x) ** 2 + (p.z - opPos.z) ** 2);
+        if (d2D < 3) {
           explodeAt(p.clone());
           return;
         }

@@ -15,14 +15,64 @@ const Playground = (() => {
   const PIECE_KEYS = { '1': 'p', '2': 'n', '3': 'b', '4': 'r', '5': 'q', '6': 'k' };
   const PIECE_NAMES = { p: 'PAWN', n: 'KNIGHT', b: 'BISHOP', r: 'ROOK', q: 'QUEEN', k: 'KING' };
 
+  let selectedArena = 0;
+
   function start() {
+    showMapPicker();
+  }
+
+  function showMapPicker() {
+    const container = document.getElementById('map-cards');
+    container.innerHTML = '';
+
+    const descriptions = [
+      { name: 'Warehouse', desc: 'Balanced layout with tall ceiling. Mixed cover at all ranges.' },
+      { name: 'Bunker', desc: 'Small indoor map with low ceiling and tight hallways. Close quarters.' },
+      { name: 'Outpost', desc: 'Large open outdoor map. Long sightlines. Favors snipers and range.' },
+      { name: 'Factory', desc: 'Hybrid map — indoor factory floor meets outdoor loading dock. All ranges.' },
+    ];
+
+    const accents = ['#ff8844', '#44aa66', '#ccaa55', '#cc5544'];
+
+    const count = FPSArena.getLayoutCount();
+    for (let i = 0; i < count; i++) {
+      const info = descriptions[i] || { name: `Arena ${i + 1}`, desc: '' };
+      const card = document.createElement('div');
+      card.className = 'map-card';
+      card.style.borderLeftColor = accents[i] || '#888';
+      card.style.borderLeftWidth = '3px';
+
+      const name = document.createElement('div');
+      name.className = 'map-card-name';
+      name.textContent = info.name;
+      name.style.color = accents[i] || '#fff';
+
+      const desc = document.createElement('div');
+      desc.className = 'map-card-desc';
+      desc.textContent = info.desc;
+
+      card.appendChild(name);
+      card.appendChild(desc);
+
+      card.addEventListener('click', () => {
+        selectedArena = i;
+        launchPlayground(i);
+      });
+
+      container.appendChild(card);
+    }
+
+    Game.showScreen('mapselect');
+  }
+
+  function launchPlayground(arenaIndex) {
     active = true;
     paused = false;
     Game.showScreen('playground');
 
     const canvas = document.getElementById('playground-canvas');
     FPSRenderer.init(canvas);
-    coverMeshes = FPSArena.build(FPSRenderer.getScene(), 0);
+    coverMeshes = FPSArena.build(FPSRenderer.getScene(), arenaIndex);
     FPSInput.bind(canvas);
 
     spawnDummy();
@@ -185,7 +235,12 @@ const Playground = (() => {
       if (wt === 'sniper') {
         FPSGun.setADS(true);
         FPSHUD.showScope(true, 'sniper');
-        FPSRenderer.setFOV(30);
+        FPSRenderer.setFOV(15);
+        const scene = FPSRenderer.getScene();
+        if (scene.fog) {
+          scene._savedFogFar = scene.fog.far;
+          scene.fog.far = 200;
+        }
       } else if (wt === 'ar') {
         FPSGun.setADS(true);
         FPSHUD.showScope(true, 'reddot');
@@ -195,9 +250,17 @@ const Playground = (() => {
         FPSRenderer.setFOV(70);
       }
     } else {
+      const wasSniper = myStats.weapon.type === 'sniper' && FPSGun.getIsADS();
       FPSGun.setADS(false);
       FPSHUD.showScope(false);
       FPSRenderer.setFOV(90);
+      if (wasSniper) {
+        const scene = FPSRenderer.getScene();
+        if (scene.fog && scene._savedFogFar) {
+          scene.fog.far = scene._savedFogFar;
+          delete scene._savedFogFar;
+        }
+      }
     }
   }
 

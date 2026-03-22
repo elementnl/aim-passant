@@ -8,7 +8,7 @@ const ARENA_DESCRIPTIONS = [
   { name: 'Warehouse', desc: 'Balanced layout with tall ceiling. Mixed cover at all ranges.' },
   { name: 'Bunker', desc: 'Small indoor map with low ceiling and tight hallways. Close quarters.' },
   { name: 'Outpost', desc: 'Large open outdoor map. Long sightlines. Favors snipers and range.' },
-  { name: 'Factory', desc: 'Medium map with elevated platforms and vertical gameplay.' },
+  { name: 'Factory', desc: 'Hybrid map — indoor factory floor meets outdoor loading dock. All ranges.' },
 ];
 
 const Game = (() => {
@@ -138,8 +138,11 @@ const Game = (() => {
 
     for (let i = 0; i < arenaCount; i++) {
       const info = ARENA_DESCRIPTIONS[i] || { name: `Arena ${i + 1}`, desc: '' };
+      const mt = MAP_THEMES[i] || MAP_THEMES[0];
       const card = document.createElement('div');
       card.className = 'map-card';
+      card.style.borderLeftColor = mt.accent;
+      card.style.borderLeftWidth = '3px';
 
       const preview = document.createElement('canvas');
       preview.className = 'map-card-preview';
@@ -150,6 +153,7 @@ const Game = (() => {
       const name = document.createElement('div');
       name.className = 'map-card-name';
       name.textContent = info.name;
+      name.style.color = mt.accent;
 
       const desc = document.createElement('div');
       desc.className = 'map-card-desc';
@@ -169,16 +173,24 @@ const Game = (() => {
     showScreen('mapselect');
   }
 
+  const MAP_THEMES = [
+    { bg: '#3a3a3e', floor: '#5a5a5e', wall: '#4a4a52', crate: '#8a7040', accent: '#ff8844' },
+    { bg: '#2a2e28', floor: '#4a4e42', wall: '#484c44', crate: '#556044', accent: '#44aa66' },
+    { bg: '#8a7a5a', floor: '#b8a070', wall: '#8a7a5a', crate: '#7a7050', accent: '#ccaa55' },
+    { bg: '#2a2520', floor: '#4a4440', wall: '#504540', crate: '#6a5040', accent: '#cc5544' },
+  ];
+
   function drawMinimap(canvas, arenaIndex) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
+    const mt = MAP_THEMES[arenaIndex] || MAP_THEMES[0];
     const scale = Math.min(w, h) / 44;
 
-    ctx.fillStyle = '#ddd';
+    ctx.fillStyle = mt.bg;
     ctx.fillRect(0, 0, w, h);
 
-    ctx.fillStyle = '#aaa';
+    ctx.fillStyle = mt.floor;
     ctx.fillRect(w / 2 - 20 * scale, h / 2 - 20 * scale, 40 * scale, 40 * scale);
 
     const layouts = getMiniMapCovers();
@@ -191,11 +203,11 @@ const Game = (() => {
       const ch = size[2] * scale;
 
       if (type === 'crate' || type === 'destructible') {
-        ctx.fillStyle = '#8B7355';
+        ctx.fillStyle = mt.crate;
       } else if (type === 'pillar' || type === 'ramp_base') {
-        ctx.fillStyle = '#666';
+        ctx.fillStyle = mt.wall;
       } else {
-        ctx.fillStyle = '#777';
+        ctx.fillStyle = mt.wall;
       }
       ctx.fillRect(x, y, Math.max(cw, 1), Math.max(ch, 1));
     });
@@ -230,13 +242,14 @@ const Game = (() => {
         { pos: [0,0,-20], size: [1,3,3], type: 'wall' },
       ],
       [
-        { pos: [-10,0,-10], size: [4,4,4], type: 'ramp_base' },
-        { pos: [10,0,10], size: [4,4,4], type: 'ramp_base' },
-        { pos: [0,0,0], size: [6,4,0.8], type: 'wall' },
-        { pos: [-6,0,6], size: [0.8,3,6], type: 'wall' },
-        { pos: [6,0,-6], size: [0.8,3,6], type: 'wall' },
-        { pos: [0,0,14], size: [6,3,0.8], type: 'wall' },
-        { pos: [0,0,-14], size: [6,3,0.8], type: 'wall' },
+        { pos: [-2,0,-16], size: [0.8,6,8], type: 'wall' },
+        { pos: [-2,0,0], size: [0.8,6,10], type: 'wall' },
+        { pos: [-2,0,16], size: [0.8,6,8], type: 'wall' },
+        { pos: [-12,0,8], size: [3,3,0.8], type: 'wall' },
+        { pos: [-12,0,-8], size: [0.8,3,3], type: 'wall' },
+        { pos: [10,0,-8], size: [3,3,1], type: 'wall' },
+        { pos: [10,0,8], size: [1,3,3], type: 'wall' },
+        { pos: [14,0,14], size: [4,4,4], type: 'ramp_base' },
       ],
     ];
   }
