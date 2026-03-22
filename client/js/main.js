@@ -14,16 +14,26 @@ const ARENA_DESCRIPTIONS = [
 const Game = (() => {
   let myColor = null;
 
-  function init() {
+  async function init() {
     Audio.preload();
-    LobbyBG.init();
-    Lobby.init();
+    LobbyBG.init('login-bg-canvas');
     document.addEventListener('click', () => { Audio.playMusic('lobby'); }, { once: true });
 
     document.addEventListener('click', (e) => {
       const el = e.target.closest('button, .lobby-btn, .setting-btn, .map-card, .modal-tab');
       if (el) Audio.play('uiClick');
     });
+
+    await Auth.init();
+
+    initLogin();
+
+    if (Auth.isLoggedIn()) {
+      await Auth.loadSettings();
+      enterLobby();
+    }
+
+    Lobby.init();
     FPS.init();
 
     Network.on('game-start', ({ chess }) => {
@@ -238,6 +248,130 @@ const Game = (() => {
   function hideDuelResult() {
     document.getElementById('duel-result').classList.add('hidden');
     document.getElementById('crosshair').classList.remove('hidden');
+  }
+
+  function initLogin() {
+    document.getElementById('btn-login').addEventListener('click', async () => {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errorEl = document.getElementById('login-error');
+      errorEl.classList.add('hidden');
+
+      if (!email || !password) {
+        errorEl.textContent = 'Enter email and password';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        document.getElementById('btn-login').textContent = 'Logging in...';
+        await Auth.login(email, password);
+        enterLobby();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.remove('hidden');
+        document.getElementById('btn-login').textContent = 'Log In';
+      }
+    });
+
+    document.getElementById('login-password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('btn-login').click();
+    });
+  }
+
+  function enterLobby() {
+    document.getElementById('lobby-username').textContent = Auth.getUsername();
+    LobbyBG.stop();
+    showScreen('lobby');
+    LobbyBG.init('lobby-bg-canvas');
+    Audio.playMusic('lobby');
+    initFriends();
+  }
+
+  function initFriends() {
+    const modal = document.getElementById('friends-modal');
+
+    document.getElementById('btn-friends').onclick = () => {
+      modal.classList.remove('hidden');
+      loadFriendList();
+    };
+
+    document.getElementById('btn-close-friends').onclick = () => {
+      modal.classList.add('hidden');
+    };
+
+    modal.querySelector('.modal-backdrop').onclick = () => {
+      modal.classList.add('hidden');
+    };
+
+    document.getElementById('btn-logout').onclick = async () => {
+      await Auth.logout();
+      Audio.stopMusic();
+      LobbyBG.stop();
+      showScreen('login');
+      LobbyBG.init('login-bg-canvas');
+      Audio.playMusic('lobby');
+    };
+
+    document.getElementById('btn-friend-search').onclick = async () => {
+      const query = document.getElementById('friend-search').value.trim();
+      const resultsEl = document.getElementById('friend-search-results');
+      resultsEl.innerHTML = '';
+      if (!query) return;
+
+      const results = await Auth.searchUsers(query);
+      if (results.length === 0) {
+        resultsEl.innerHTML = '<div style="color:#666;font-size:0.8rem;">No users found</div>';
+        return;
+      }
+
+      results.forEach(user => {
+        const item = document.createElement('div');
+        item.className = 'friend-item';
+        item.innerHTML = `
+          <span class="friend-name">${user.username}</span>
+          <button class="friend-action friend-action-add">Add</button>
+        `;
+        item.querySelector('button').onclick = async () => {
+          try {
+            await Auth.addFriend(user.id);
+            item.querySelector('button').textContent = 'Added';
+            item.querySelector('button').disabled = true;
+            loadFriendList();
+          } catch (err) {
+            item.querySelector('button').textContent = 'Error';
+          }
+        };
+        resultsEl.appendChild(item);
+      });
+    };
+  }
+
+  async function loadFriendList() {
+    const listEl = document.getElementById('friend-list');
+    listEl.innerHTML = '<div style="color:#666;font-size:0.8rem;">Loading...</div>';
+
+    const friends = await Auth.getFriends();
+    listEl.innerHTML = '';
+
+    if (friends.length === 0) {
+      listEl.innerHTML = '<div style="color:#666;font-size:0.8rem;">No friends yet</div>';
+      return;
+    }
+
+    friends.forEach(friend => {
+      const item = document.createElement('div');
+      item.className = 'friend-item';
+      item.innerHTML = `
+        <span class="friend-name">${friend.username}</span>
+        <button class="friend-action friend-action-remove">Remove</button>
+      `;
+      item.querySelector('button').onclick = async () => {
+        await Auth.removeFriend(friend.id);
+        loadFriendList();
+      };
+      listEl.appendChild(item);
+    });
   }
 
   return { init, showScreen };

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -17,6 +18,13 @@ const chessJsWrapped = `(function(){var exports={};${chessJsSrc}\nwindow.Chess=e
 
 app.get('/lib/chess.js', (_req, res) => {
   res.type('application/javascript').send(chessJsWrapped);
+});
+
+app.get('/api/config', (_req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  });
 });
 
 app.use(express.static(path.join(__dirname, '..', 'client')));

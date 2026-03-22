@@ -158,6 +158,7 @@ const Lobby = (() => {
         btn.parentElement.querySelectorAll('.setting-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         FPSRenderer.applySettings();
+        if (Auth.isLoggedIn()) Auth.saveSettings();
       });
     });
 
@@ -199,6 +200,7 @@ const Lobby = (() => {
     Audio.setMasterVolume(Settings.get('masterVolume'));
     Audio.updateMusicVolume();
     FPSRenderer.applySettings();
+    if (Auth.isLoggedIn()) Auth.saveSettings();
   }
 
   function showWaitingRoom() {

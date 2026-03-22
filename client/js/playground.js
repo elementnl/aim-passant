@@ -294,7 +294,7 @@ const Playground = (() => {
 
     Audio.stopMusic();
     Audio.playMusic('lobby');
-    LobbyBG.init();
+    LobbyBG.init('lobby-bg-canvas');
     Game.showScreen('lobby');
   }
 

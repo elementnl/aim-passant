@@ -10,8 +10,31 @@
   <link href="https://fonts.googleapis.com/css2?family=Bigshot+One&family=Syne+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div id="screen-lobby" class="screen active">
-    <button id="btn-open-settings" class="lobby-settings-btn">&#9881;</button>
+  <div id="screen-login" class="screen active">
+    <div class="lobby-hero">
+      <canvas id="login-bg-canvas"></canvas>
+      <div class="lobby-content">
+        <h1 class="lobby-title">AIM PASSANT</h1>
+        <p class="lobby-tagline">FPS Chess in Your Browser</p>
+        <div class="lobby-version">CLOSED BETA</div>
+        <div id="login-form" class="login-form">
+          <input type="email" id="login-email" placeholder="Email" class="lobby-input" autocomplete="email">
+          <input type="password" id="login-password" placeholder="Password" class="lobby-input" autocomplete="current-password">
+          <button id="btn-login" class="lobby-btn lobby-btn-sm" style="background:#fff;color:#111;border-color:#fff;width:100%;">Log In</button>
+          <p id="login-error" class="lobby-error hidden"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="screen-lobby" class="screen">
+    <div class="lobby-topbar">
+      <span id="lobby-username" class="topbar-user"></span>
+      <div class="topbar-actions">
+        <button id="btn-friends" class="topbar-btn">Friends</button>
+        <button id="btn-open-settings" class="topbar-btn">&#9881;</button>
+        <button id="btn-logout" class="topbar-btn topbar-btn-dim">Logout</button>
+      </div>
+    </div>
     <div class="lobby-hero">
       <canvas id="lobby-bg-canvas"></canvas>
       <div class="lobby-content">
@@ -194,6 +217,30 @@
     </div>
   </div>
 
+  <div id="friends-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Friends</h2>
+        <button id="btn-close-friends" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-group">
+          <label class="setting-label">Add Friend</label>
+          <div class="friend-search-row">
+            <input type="text" id="friend-search" class="lobby-input" placeholder="Search username..." style="text-align:left;flex:1;">
+            <button id="btn-friend-search" class="lobby-btn lobby-btn-sm" style="background:#fff;color:#111;border-color:#fff;">Search</button>
+          </div>
+          <div id="friend-search-results" class="friend-list"></div>
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">Your Friends</label>
+          <div id="friend-list" class="friend-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="screen-waiting" class="screen">
     <div class="lobby-container">
       <h1 class="title">AIM PASSANT</h1>
@@ -313,11 +360,13 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/lib/chess.js"></script>
   <script src="/shared/pieces.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/lobby-bg.js"></script>
   <script src="js/audio.js"></script>
   <script src="js/network.js"></script>

@@ -3,8 +3,8 @@ const LobbyBG = (() => {
   let active = false;
   let angle = 0;
 
-  function init() {
-    const canvas = document.getElementById('lobby-bg-canvas');
+  function init(canvasId) {
+    const canvas = document.getElementById(canvasId || 'lobby-bg-canvas');
     if (!canvas) return;
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false });
