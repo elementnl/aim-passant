@@ -25,6 +25,7 @@
         </div>
       </div>
     </div>
+    <div class="version-tag">v1.2.1-beta</div>
   </div>
   <div id="screen-lobby" class="screen">
     <div class="lobby-topbar">
@@ -65,10 +66,33 @@
         </div>
         <p id="lobby-error" class="lobby-error hidden"></p>
         <div class="lobby-divider"></div>
-        <button id="btn-playground" class="lobby-btn lobby-btn-playground">
-          <span class="lobby-btn-icon">&#9654;</span>
-          Playground
-        </button>
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+          <button id="btn-playground" class="lobby-btn lobby-btn-playground">
+            <span class="lobby-btn-icon">&#9654;</span>
+            Playground
+          </button>
+          <button id="btn-howtoplay" class="lobby-btn lobby-btn-playground">
+            <span class="lobby-btn-icon">?</span>
+            How to Play
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="version-tag">v1.2.1-beta</div>
+  </div>
+
+  <div id="howtoplay-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header">
+        <h2 class="modal-title">How to Play</h2>
+        <button id="btn-close-howtoplay" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:#888;font-size:0.8rem;margin-bottom:1.2rem;">
+          Play chess. When you capture a piece, fight in a first-person duel. The duel winner keeps their piece. Kill the King to win.
+        </p>
+        <div id="piece-guide" class="piece-guide"></div>
       </div>
     </div>
   </div>

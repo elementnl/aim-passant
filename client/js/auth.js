@@ -30,6 +30,7 @@ const Auth = (() => {
     await supabase.auth.signOut();
     currentUser = null;
     userProfile = null;
+    Settings.reset();
   }
 
   async function loadProfile() {
@@ -50,10 +51,7 @@ const Auth = (() => {
       .eq('user_id', currentUser.id)
       .single();
     if (data && data.settings_json) {
-      const saved = data.settings_json;
-      for (const [key, val] of Object.entries(saved)) {
-        Settings.set(key, val);
-      }
+      Settings.setAll(data.settings_json);
     }
   }
 

@@ -77,6 +77,19 @@ const Lobby = (() => {
       Playground.start();
     });
 
+    document.getElementById('btn-howtoplay').addEventListener('click', () => {
+      buildPieceGuide();
+      document.getElementById('howtoplay-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-howtoplay').addEventListener('click', () => {
+      document.getElementById('howtoplay-modal').classList.add('hidden');
+    });
+
+    document.getElementById('howtoplay-modal').querySelector('.modal-backdrop').addEventListener('click', () => {
+      document.getElementById('howtoplay-modal').classList.add('hidden');
+    });
+
     initSettings();
 
     Network.on('room-update', ({ players }) => {
@@ -217,7 +230,103 @@ const Lobby = (() => {
     el.classList.remove('hidden');
   }
 
+  function buildPieceGuide() {
+    const container = document.getElementById('piece-guide');
+    if (container.children.length > 0) return;
+
+    const pieces = [
+      {
+        icon: '\u265F', name: 'Pawn', weapon: 'Semi-Auto Pistol',
+        hp: 150, speed: 'Fast', jump: 'Low',
+        passive: 'Slow health regeneration over time.',
+        ult: 'Flashbang — blinds the opponent for 2 seconds after a 1-second pin pull.',
+      },
+      {
+        icon: '\u265E', name: 'Knight', weapon: 'Charged Bow',
+        hp: 200, speed: 'Fast', jump: 'Very High (Double Jump)',
+        passive: 'Double jump — press space mid-air for a second jump.',
+        ult: 'Explosive Arrow — fires a homing arrow that deals 150 damage on impact with area explosion. No charge needed.',
+      },
+      {
+        icon: '\u265D', name: 'Bishop', weapon: 'Pump Shotgun',
+        hp: 275, speed: 'Medium', jump: 'Medium',
+        passive: 'Resurrects once at 40 HP when killed. The fight continues.',
+        ult: 'Soul Pull — drags the opponent toward you for 3 seconds. They cannot move but can shoot. Breaks wooden crates.',
+      },
+      {
+        icon: '\u265C', name: 'Rook', weapon: 'Bolt-Action Sniper',
+        hp: 350, speed: 'Medium', jump: 'Medium',
+        passive: 'Immune to first headshot OR first 2 body shots.',
+        ult: 'Freeze — freezes the opponent for 2.5 seconds. They cannot move or look but can shoot forward.',
+      },
+      {
+        icon: '\u265B', name: 'Queen', weapon: 'Full-Auto AR',
+        hp: 425, speed: 'Slow', jump: 'Low-Medium',
+        passive: 'Wallhack pulse every 10 seconds — sees opponent through walls for 1 second.',
+        ult: 'Ring of Fire — expanding ring of fire deals 210 damage. Blocked by walls. Jump on platforms to avoid.',
+      },
+      {
+        icon: '\u265A', name: 'King', weapon: 'Minigun',
+        hp: 500, speed: 'Slow', jump: 'Low-Medium',
+        passive: 'Forcefield activates every 15 seconds for 3 seconds, blocking all damage.',
+        ult: 'Airstrike — calls a bomb on the opponent\'s position. 180 max damage in 8-unit radius. Can damage yourself.',
+      },
+    ];
+
+    pieces.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'piece-card';
+      card.innerHTML = `
+        <div class="piece-card-header">
+          <span class="piece-card-icon">${p.icon}</span>
+          <div>
+            <div class="piece-card-title">${p.name}</div>
+            <div class="piece-card-weapon">${p.weapon}</div>
+          </div>
+        </div>
+        <div class="piece-card-stats">
+          <div class="piece-card-stat"><span class="piece-card-stat-label">HP</span> <span class="piece-card-stat-val">${p.hp}</span></div>
+          <div class="piece-card-stat"><span class="piece-card-stat-label">Speed</span> <span class="piece-card-stat-val">${p.speed}</span></div>
+          <div class="piece-card-stat"><span class="piece-card-stat-label">Jump</span> <span class="piece-card-stat-val">${p.jump}</span></div>
+        </div>
+        <div class="piece-card-abilities">
+          <div class="piece-card-ability"><strong>Passive:</strong> ${p.passive}</div>
+          <div class="piece-card-ability"><strong>Ultimate (Q):</strong> ${p.ult}</div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
   function getMyColor() { return myColor; }
 
-  return { init, getMyColor };
+  function refreshSettingsUI() {
+    ['shadows', 'antialiasing', 'textures', 'particles'].forEach(key => {
+      const current = Settings.get(key);
+      document.querySelectorAll(`.setting-btn[data-setting="${key}"]`).forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === String(current));
+      });
+    });
+
+    const sliderConfigs = {
+      masterVolume: v => Math.round(v) + '%',
+      musicVolume: v => Math.round(v) + '%',
+      sfxVolume: v => Math.round(v) + '%',
+      sensitivity: v => (v).toFixed(2),
+      scopedSensitivity: v => (v).toFixed(2),
+      renderScale: v => Math.round(v) + '%',
+    };
+
+    for (const [key, display] of Object.entries(sliderConfigs)) {
+      const slider = document.getElementById('slider-' + key);
+      const valEl = document.getElementById('val-' + key);
+      if (!slider || !valEl) continue;
+      const saved = Settings.get(key);
+      if (saved === undefined || saved === null) continue;
+      slider.value = Math.round(saved * 100);
+      valEl.textContent = display(saved);
+    }
+  }
+
+  return { init, getMyColor, refreshSettingsUI };
 })();

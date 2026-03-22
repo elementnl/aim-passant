@@ -568,6 +568,88 @@ body {
 .friend-action-remove { color: #e74c3c; border-color: #e74c3c; }
 .friend-action-remove:hover { background: #e74c3c; color: #111; }
 
+.version-tag {
+  position: absolute;
+  bottom: 1rem;
+  right: 1.5rem;
+  font-size: 0.85rem;
+  color: #fff;
+  letter-spacing: 1px;
+  z-index: 2;
+}
+
+/* How to Play */
+.piece-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.piece-card {
+  border: 1px solid #333;
+  padding: 1rem;
+  background: rgba(255,255,255,0.03);
+}
+
+.piece-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.piece-card-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  color: #fff;
+}
+
+.piece-card-title {
+  font-family: 'Bigshot One', cursive;
+  font-size: 1.1rem;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.piece-card-weapon {
+  font-size: 0.7rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.piece-card-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.piece-card-stat {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.piece-card-stat-label { color: #555; }
+.piece-card-stat-val { color: #aaa; }
+
+.piece-card-abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.piece-card-ability {
+  font-size: 0.75rem;
+  color: #999;
+  line-height: 1.4;
+}
+
+.piece-card-ability strong {
+  color: #ccc;
+}
+
 /* Lobby extras */
 .lobby-divider {
   width: 60px;

@@ -30,10 +30,12 @@ const Game = (() => {
 
     if (Auth.isLoggedIn()) {
       await Auth.loadSettings();
+      applyAllSettings();
       enterLobby();
     }
 
     Lobby.init();
+    if (Auth.isLoggedIn()) Lobby.refreshSettingsUI();
     FPS.init();
 
     Network.on('game-start', ({ chess }) => {
@@ -248,6 +250,12 @@ const Game = (() => {
   function hideDuelResult() {
     document.getElementById('duel-result').classList.add('hidden');
     document.getElementById('crosshair').classList.remove('hidden');
+  }
+
+  function applyAllSettings() {
+    const mv = Settings.get('masterVolume');
+    Audio.setMasterVolume(mv === undefined || mv === null ? 1 : mv);
+    Audio.updateMusicVolume();
   }
 
   function initLogin() {
