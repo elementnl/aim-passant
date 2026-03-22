@@ -8,7 +8,7 @@ const FPSHUD = (() => {
     sniper: 'Sniper Rifle', ar: 'Assault Rifle', deagle: 'Desert Eagle',
   };
 
-  const ARENA_NAMES = ['Warehouse', 'Corridors', 'Towers', 'Sniper Alley'];
+  const ARENA_NAMES = ['Warehouse', 'Bunker', 'Outpost', 'Factory'];
 
   function showIntro(attacker, defender, arenaIndex, callback) {
     const el = document.getElementById('duel-intro');
@@ -58,15 +58,16 @@ const FPSHUD = (() => {
   }
 
   function showReloading(show) {
+    const isPG = document.getElementById('screen-playground')?.classList.contains('active');
+    const spinner = document.getElementById(isPG ? 'pg-reload-spinner' : 'reload-spinner');
     const indicator = document.getElementById('reload-indicator');
-    const spinner = document.getElementById('reload-spinner');
-    if (!indicator || !spinner) return;
-    if (show) {
-      indicator.classList.remove('hidden');
-      spinner.classList.remove('hidden');
-    } else {
-      indicator.classList.add('hidden');
-      spinner.classList.add('hidden');
+    if (spinner) {
+      if (show) spinner.classList.remove('hidden');
+      else spinner.classList.add('hidden');
+    }
+    if (indicator) {
+      if (show) indicator.classList.remove('hidden');
+      else indicator.classList.add('hidden');
     }
   }
 

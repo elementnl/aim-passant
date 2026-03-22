@@ -6,6 +6,8 @@ const FPSArena = (() => {
   const LAYOUTS = [
     {
       name: 'Warehouse',
+      arenaSize: 40,
+      wallHeight: 10,
       covers: [
         { pos: [0, 2, 0],       size: [4, 4, 1.5],    type: 'wall' },
         { pos: [0, 1, 6],       size: [2, 2, 2],       type: 'crate', destructible: true },
@@ -24,80 +26,83 @@ const FPSArena = (() => {
         { pos: [12, 1, -14],    size: [4, 2, 1.5],     type: 'crate' },
         { pos: [0, 1.5, 14],    size: [6, 3, 0.8],     type: 'wall' },
         { pos: [0, 1.5, -14],   size: [6, 3, 0.8],     type: 'wall' },
-        { pos: [-3, 2.5, 0],    size: [0.8, 5, 0.8],   type: 'pillar' },
-        { pos: [3, 2.5, 0],     size: [0.8, 5, 0.8],   type: 'pillar' },
+        { pos: [-3, 3, 0],      size: [0.8, 6, 0.8],   type: 'pillar' },
+        { pos: [3, 3, 0],       size: [0.8, 6, 0.8],   type: 'pillar' },
       ],
     },
     {
-      name: 'Corridors',
+      name: 'Bunker',
+      arenaSize: 26,
+      wallHeight: 3.5,
       covers: [
-        { pos: [-7, 2, -12],   size: [0.8, 4, 14],    type: 'wall' },
-        { pos: [-7, 2, 12],    size: [0.8, 4, 14],     type: 'wall' },
-        { pos: [7, 2, -12],    size: [0.8, 4, 14],     type: 'wall' },
-        { pos: [7, 2, 12],     size: [0.8, 4, 14],     type: 'wall' },
-        { pos: [-4, 2, -10],   size: [5, 4, 0.8],      type: 'wall' },
-        { pos: [4, 2, -10],    size: [5, 4, 0.8],      type: 'wall' },
-        { pos: [-4, 2, 10],    size: [5, 4, 0.8],      type: 'wall' },
-        { pos: [4, 2, 10],     size: [5, 4, 0.8],      type: 'wall' },
-        { pos: [-3.5, 1, 5],   size: [6, 2, 0.8],      type: 'wall' },
-        { pos: [3.5, 1, -5],   size: [6, 2, 0.8],      type: 'wall' },
-        { pos: [-12, 1, 5],    size: [1.5, 2, 1.5],    type: 'crate', destructible: true },
-        { pos: [12, 1, -5],    size: [1.5, 2, 1.5],    type: 'crate', destructible: true },
-        { pos: [-12, 1, -5],   size: [1.5, 2, 1.5],    type: 'crate', destructible: true },
-        { pos: [12, 1, 5],     size: [1.5, 2, 1.5],    type: 'crate', destructible: true },
-        { pos: [0, 1, 0],      size: [2, 2, 2],         type: 'crate', destructible: true },
-        { pos: [-14, 1.5, 0],  size: [6, 3, 0.8],      type: 'wall' },
-        { pos: [14, 1.5, 0],   size: [6, 3, 0.8],      type: 'wall' },
-        { pos: [-3.5, 0.75, -14], size: [1.5, 1.5, 1.5], type: 'crate', destructible: true },
-        { pos: [3.5, 0.75, 14],   size: [1.5, 1.5, 1.5], type: 'crate', destructible: true },
-        { pos: [0, 1, 15],     size: [4, 2, 1.5],      type: 'crate' },
-        { pos: [0, 1, -15],    size: [4, 2, 1.5],      type: 'crate' },
+        { pos: [-5, 1.25, 0],   size: [0.5, 2.5, 8],   type: 'wall' },
+        { pos: [5, 1.25, 0],    size: [0.5, 2.5, 8],    type: 'wall' },
+        { pos: [0, 1.25, -5],   size: [4, 2.5, 0.5],    type: 'wall' },
+        { pos: [0, 1.25, 5],    size: [4, 2.5, 0.5],    type: 'wall' },
+        { pos: [-9, 0.75, 5],   size: [1.5, 1.5, 1.5],  type: 'crate', destructible: true },
+        { pos: [9, 0.75, -5],   size: [1.5, 1.5, 1.5],  type: 'crate', destructible: true },
+        { pos: [-9, 0.75, -5],  size: [1.5, 1.5, 1.5],  type: 'crate', destructible: true },
+        { pos: [9, 0.75, 5],    size: [1.5, 1.5, 1.5],  type: 'crate', destructible: true },
+        { pos: [0, 0.75, 0],    size: [1.5, 1.5, 1.5],  type: 'crate', destructible: true },
+        { pos: [-3, 0.5, 9],    size: [3, 1, 0.5],       type: 'wall' },
+        { pos: [3, 0.5, -9],    size: [3, 1, 0.5],       type: 'wall' },
+        { pos: [-9, 1.25, 0],   size: [1.5, 2.5, 0.5],  type: 'wall' },
+        { pos: [9, 1.25, 0],    size: [1.5, 2.5, 0.5],  type: 'wall' },
+        { pos: [-3, 0.75, -3],  size: [1, 1.5, 1],       type: 'crate', destructible: true },
+        { pos: [3, 0.75, 3],    size: [1, 1.5, 1],       type: 'crate', destructible: true },
       ],
     },
     {
-      name: 'Towers',
+      name: 'Outpost',
+      arenaSize: 56,
+      wallHeight: 20,
+      noCeiling: true,
       covers: [
-        { pos: [-10, 1.5, -10], size: [4, 3, 4],   type: 'ramp_base' },
-        { pos: [-10, 0.15, -7], size: [4, 0.3, 2],  type: 'ramp', rampDir: 'z' },
-        { pos: [10, 1.5, 10],   size: [4, 3, 4],    type: 'ramp_base' },
-        { pos: [10, 0.15, 13],  size: [4, 0.3, 2],  type: 'ramp', rampDir: 'z' },
-        { pos: [0, 2.5, 0],     size: [3, 5, 3],    type: 'pillar' },
-        { pos: [-5, 1, 5],      size: [2, 2, 2],    type: 'crate', destructible: true },
-        { pos: [5, 1, -5],      size: [2, 2, 2],    type: 'crate', destructible: true },
-        { pos: [-14, 1, 0],     size: [2, 2, 2],    type: 'crate', destructible: true },
-        { pos: [14, 1, 0],      size: [2, 2, 2],    type: 'crate', destructible: true },
-        { pos: [-5, 0.5, -12],  size: [6, 1, 0.8],  type: 'wall' },
-        { pos: [5, 0.5, 12],    size: [6, 1, 0.8],  type: 'wall' },
-        { pos: [0, 1.5, 8],     size: [3, 3, 0.8],  type: 'wall' },
-        { pos: [0, 1.5, -8],    size: [3, 3, 0.8],  type: 'wall' },
-        { pos: [-16, 1, 10],    size: [1.5, 2, 1.5], type: 'crate', destructible: true },
-        { pos: [16, 1, -10],    size: [1.5, 2, 1.5], type: 'crate', destructible: true },
+        { pos: [0, 2, 0],       size: [3, 4, 3],       type: 'pillar' },
+        { pos: [-15, 1.5, 15],  size: [4, 3, 4],       type: 'ramp_base' },
+        { pos: [-15, 0.15, 18], size: [4, 0.3, 2],     type: 'ramp' },
+        { pos: [15, 1.5, -15],  size: [4, 3, 4],       type: 'ramp_base' },
+        { pos: [15, 0.15, -12], size: [4, 0.3, 2],     type: 'ramp' },
+        { pos: [-8, 1, 0],      size: [2, 2, 2],       type: 'crate', destructible: true },
+        { pos: [8, 1, 0],       size: [2, 2, 2],       type: 'crate', destructible: true },
+        { pos: [0, 1, 10],      size: [2, 2, 2],       type: 'crate', destructible: true },
+        { pos: [0, 1, -10],     size: [2, 2, 2],       type: 'crate', destructible: true },
+        { pos: [-20, 1.5, 0],   size: [3, 3, 1],       type: 'wall' },
+        { pos: [20, 1.5, 0],    size: [1, 3, 3],       type: 'wall' },
+        { pos: [0, 1.5, 20],    size: [3, 3, 1],       type: 'wall' },
+        { pos: [0, 1.5, -20],   size: [1, 3, 3],       type: 'wall' },
+        { pos: [-10, 0.5, -10], size: [6, 1, 0.8],     type: 'wall' },
+        { pos: [10, 0.5, 10],   size: [6, 1, 0.8],     type: 'wall' },
+        { pos: [-22, 1, 15],    size: [1.5, 2, 1.5],   type: 'crate', destructible: true },
+        { pos: [22, 1, -15],    size: [1.5, 2, 1.5],   type: 'crate', destructible: true },
+        { pos: [-15, 1, -8],    size: [1.5, 2, 1.5],   type: 'crate', destructible: true },
+        { pos: [15, 1, 8],      size: [1.5, 2, 1.5],   type: 'crate', destructible: true },
       ],
     },
     {
-      name: 'Sniper Alley',
+      name: 'Factory',
+      arenaSize: 40,
+      wallHeight: 8,
       covers: [
-        { pos: [0, 2, -14],     size: [1, 4, 10],    type: 'wall' },
-        { pos: [0, 2, 14],      size: [1, 4, 10],    type: 'wall' },
-        { pos: [0, 2, 0],       size: [1, 4, 8],     type: 'wall' },
-        { pos: [-10, 1, 0],     size: [2, 2, 2],      type: 'crate', destructible: true },
-        { pos: [10, 1, 0],      size: [2, 2, 2],      type: 'crate', destructible: true },
-        { pos: [-5, 0.75, 10],  size: [1.5, 1.5, 1.5], type: 'crate', destructible: true },
-        { pos: [5, 0.75, -10],  size: [1.5, 1.5, 1.5], type: 'crate', destructible: true },
-        { pos: [-5, 0.75, -10], size: [1.5, 1.5, 1.5], type: 'crate', destructible: true },
-        { pos: [5, 0.75, 10],   size: [1.5, 1.5, 1.5], type: 'crate', destructible: true },
-        { pos: [-15, 1.5, 10],  size: [3, 3, 1],      type: 'wall' },
-        { pos: [15, 1.5, -10],  size: [3, 3, 1],      type: 'wall' },
-        { pos: [-15, 1.5, -10], size: [1, 3, 3],      type: 'wall' },
-        { pos: [15, 1.5, 10],   size: [1, 3, 3],      type: 'wall' },
-        { pos: [-8, 1.5, 0],    size: [0.8, 3, 8],    type: 'wall' },
-        { pos: [8, 1.5, 0],     size: [0.8, 3, 8],    type: 'wall' },
-        { pos: [0, 1, 16],      size: [6, 2, 1.5],    type: 'crate' },
-        { pos: [0, 1, -16],     size: [6, 2, 1.5],    type: 'crate' },
-        { pos: [-12, 2, -5],    size: [4, 4, 4],      type: 'ramp_base' },
-        { pos: [-12, 0.15, -2], size: [4, 0.3, 2],    type: 'ramp', rampDir: 'z' },
-        { pos: [12, 2, 5],      size: [4, 4, 4],      type: 'ramp_base' },
-        { pos: [12, 0.15, 8],   size: [4, 0.3, 2],    type: 'ramp', rampDir: 'z' },
+        { pos: [-10, 2, -10],   size: [4, 4, 4],       type: 'ramp_base' },
+        { pos: [-10, 0.15, -7], size: [4, 0.3, 2],     type: 'ramp' },
+        { pos: [10, 2, 10],     size: [4, 4, 4],       type: 'ramp_base' },
+        { pos: [10, 0.15, 13],  size: [4, 0.3, 2],     type: 'ramp' },
+        { pos: [0, 2, 0],       size: [6, 4, 0.8],     type: 'wall' },
+        { pos: [-6, 1.5, 6],    size: [0.8, 3, 6],     type: 'wall' },
+        { pos: [6, 1.5, -6],    size: [0.8, 3, 6],     type: 'wall' },
+        { pos: [-14, 1, 6],     size: [2, 2, 2],       type: 'crate', destructible: true },
+        { pos: [14, 1, -6],     size: [2, 2, 2],       type: 'crate', destructible: true },
+        { pos: [-5, 0.75, -5],  size: [1.5, 1.5, 1.5], type: 'crate', destructible: true },
+        { pos: [5, 0.75, 5],    size: [1.5, 1.5, 1.5], type: 'crate', destructible: true },
+        { pos: [0, 1.5, 14],    size: [6, 3, 0.8],     type: 'wall' },
+        { pos: [0, 1.5, -14],   size: [6, 3, 0.8],     type: 'wall' },
+        { pos: [-14, 1.5, 0],   size: [0.8, 3, 4],     type: 'wall' },
+        { pos: [14, 1.5, 0],    size: [0.8, 3, 4],     type: 'wall' },
+        { pos: [-3, 3, 10],     size: [0.8, 6, 0.8],   type: 'pillar' },
+        { pos: [3, 3, -10],     size: [0.8, 6, 0.8],   type: 'pillar' },
+        { pos: [10, 1, 0],      size: [2, 2, 2],       type: 'crate', destructible: true },
+        { pos: [-10, 1, 0],     size: [2, 2, 2],       type: 'crate', destructible: true },
       ],
     },
   ];
@@ -143,7 +148,6 @@ const FPSArena = (() => {
   }
 
   function build(scene, layoutIndex) {
-    const { ARENA_SIZE, WALL_HEIGHT } = FPSConfig;
     const quality = Settings.get('graphics');
     const useShadows = quality !== 'low';
     const useTextures = quality !== 'low';
@@ -156,6 +160,10 @@ const FPSArena = (() => {
       currentLayout = Math.floor(Math.random() * LAYOUTS.length);
     }
 
+    const layout = LAYOUTS[currentLayout];
+    const ARENA_SIZE = layout.arenaSize || FPSConfig.ARENA_SIZE;
+    const WALL_HEIGHT = layout.wallHeight || FPSConfig.WALL_HEIGHT;
+
     const floorMat = useTextures
       ? new THREE.MeshLambertMaterial({ map: createFloorTexture() })
       : new THREE.MeshLambertMaterial({ color: 0x8a8a8a });
@@ -167,13 +175,15 @@ const FPSArena = (() => {
     if (useShadows) floor.receiveShadow = true;
     scene.add(floor);
 
-    const ceiling = new THREE.Mesh(
-      new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE),
-      new THREE.MeshLambertMaterial({ color: 0x555555 })
-    );
-    ceiling.rotation.x = Math.PI / 2;
-    ceiling.position.y = WALL_HEIGHT;
-    scene.add(ceiling);
+    if (!layout.noCeiling) {
+      const ceiling = new THREE.Mesh(
+        new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE),
+        new THREE.MeshLambertMaterial({ color: 0x555555 })
+      );
+      ceiling.rotation.x = Math.PI / 2;
+      ceiling.position.y = WALL_HEIGHT;
+      scene.add(ceiling);
+    }
 
     const half = ARENA_SIZE / 2;
     const wallTex = useTextures ? createWallTexture() : null;
@@ -200,7 +210,6 @@ const FPSArena = (() => {
 
     const coverMeshes = [];
     const colors = { wall: 0x707070, crate: 0x8B7355, pillar: 0x606060, ramp_base: 0x707070, ramp: 0x808060 };
-    const layout = LAYOUTS[currentLayout];
 
     layout.covers.forEach((cover) => {
       const { pos, size, type, destructible } = cover;
@@ -256,6 +265,9 @@ const FPSArena = (() => {
   function getColliders() { return colliders; }
   function getLayoutIndex() { return currentLayout; }
   function getLayoutCount() { return LAYOUTS.length; }
+  function getArenaSize() {
+    return LAYOUTS[currentLayout]?.arenaSize || FPSConfig.ARENA_SIZE;
+  }
 
-  return { build, damageAt, getColliders, getLayoutIndex, getLayoutCount };
+  return { build, damageAt, getColliders, getLayoutIndex, getLayoutCount, getArenaSize };
 })();

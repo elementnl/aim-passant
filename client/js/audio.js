@@ -40,6 +40,10 @@ const Audio = (() => {
 
     deagleFire:     { src: 'sounds/deagle-fire.mp3',    volume: 0.5 },
     deagleReload:   { src: 'sounds/deagle-reload.mp3',  volume: 0.5 },
+    minigunSpinup:  { src: 'sounds/minigun-spinup.wav',  volume: 0.5 },
+    minigunFire:    { src: 'sounds/minigun-fire.wav',    volume: 0.4 },
+    minigunWinddown:{ src: 'sounds/minigun-winddown.wav', volume: 0.4 },
+    minigunReload:  { src: 'sounds/minigun-reload.wav',  volume: 0.5 },
     duelStart:      { src: 'sounds/duel-start.mp3',     volume: 0.7 },
 
     pawnFlashbang:    { src: 'sounds/pawn-flashbang.wav',     volume: 0.6 },

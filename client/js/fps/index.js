@@ -20,14 +20,10 @@ const FPS = (() => {
   }
 
   function rebuildArena(arenaIndex) {
+    const canvas = document.getElementById('duel-canvas');
+    FPSRenderer.init(canvas);
+
     const scene = FPSRenderer.getScene();
-    const toRemove = [];
-    scene.traverse(child => {
-      if (child.isMesh && !child.parent?.isCamera && child.parent === scene) {
-        toRemove.push(child);
-      }
-    });
-    toRemove.forEach(m => scene.remove(m));
     coverMeshes = FPSArena.build(scene, arenaIndex);
   }
 
@@ -45,6 +41,7 @@ const FPS = (() => {
     myMaxHP = myStats.hp;
 
     rebuildArena(duelInfo.arenaIndex);
+    FPSInput.bind(document.getElementById('duel-canvas'));
 
     const opponentPiece = isAttacker ? duelInfo.defender.piece : duelInfo.attacker.piece;
     const mySpawn = isAttacker ? duelInfo.spawns.attacker : duelInfo.spawns.defender;
@@ -98,10 +95,29 @@ const FPS = (() => {
 
     const onContextMenu = (e) => e.preventDefault();
 
+    const onKeyDown = (e) => {
+      if (!active) return;
+      if (e.key === 'Escape' && !FPSInput.isPointerLocked()) {
+        toggleDuelPause();
+      }
+    };
+
     canvas.addEventListener('mousedown', onMouseDown);
     canvas.addEventListener('mouseup', onMouseUp);
     canvas.addEventListener('contextmenu', onContextMenu);
-    canvas._duelHandlers = { onMouseDown, onMouseUp, onContextMenu };
+    document.addEventListener('keydown', onKeyDown);
+    canvas._duelHandlers = { onMouseDown, onMouseUp, onContextMenu, onKeyDown };
+
+    document.getElementById('btn-duel-resume').onclick = () => {
+      toggleDuelPause();
+      FPSInput.requestPointerLock();
+    };
+    document.getElementById('btn-duel-settings').onclick = () => {
+      document.getElementById('settings-modal').classList.remove('hidden');
+    };
+    document.getElementById('btn-duel-leave').onclick = () => {
+      window.location.reload();
+    };
 
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
@@ -169,9 +185,14 @@ const FPS = (() => {
     lastTime = now;
 
     if (duelReady && !dying) {
-      FPSPlayer.update(dt, myStats.speed);
+      const isFrozen = FPSAbilities.isFrozen();
+      if (!isFrozen) {
+        FPSPlayer.update(dt, myStats.speed);
+      } else {
+        FPSInput.consumeMouse();
+      }
       if (FPSInput.isDown('r')) FPSShooting.tryReload();
-      if (FPSInput.isDown('q')) FPSAbilities.tryUlt();
+      if (FPSInput.isDown('q') && !isFrozen) FPSAbilities.tryUlt();
       if (mouseDown && !FPSAbilities.isDisarmed()) {
         FPSShooting.onMouseHeld(FPSRenderer.getCamera(), FPSOpponent.getMesh(), myStats, coverMeshes);
       }
@@ -284,11 +305,16 @@ const FPS = (() => {
     FPSHUD.showChargeBar(false);
     FPSRenderer.setFOV(90);
 
+    document.getElementById('duel-pause').classList.add('hidden');
+
     const canvas = document.getElementById('duel-canvas');
     if (canvas._duelHandlers) {
       canvas.removeEventListener('mousedown', canvas._duelHandlers.onMouseDown);
       canvas.removeEventListener('mouseup', canvas._duelHandlers.onMouseUp);
       canvas.removeEventListener('contextmenu', canvas._duelHandlers.onContextMenu);
+      if (canvas._duelHandlers.onKeyDown) {
+        document.removeEventListener('keydown', canvas._duelHandlers.onKeyDown);
+      }
       delete canvas._duelHandlers;
     }
 
@@ -306,6 +332,12 @@ const FPS = (() => {
       active = false;
       FPSEffects.clear(FPSRenderer.getScene());
     }, 2000);
+  }
+
+  function toggleDuelPause() {
+    const el = document.getElementById('duel-pause');
+    const showing = el.classList.contains('hidden');
+    el.classList.toggle('hidden', !showing);
   }
 
   function isActive() { return active; }

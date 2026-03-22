@@ -10,19 +10,23 @@ const FPSShooting = (() => {
   let mouseHeld = false;
   let pumpPending = false;
   let boltPending = false;
+  let minigunSpunUp = false;
+  let minigunSpinStart = 0;
+  let minigunFireLoop = null;
 
   let bloom = 0;
   let recoilOffsetX = 0;
   let recoilOffsetY = 0;
-  const BLOOM_WEAPONS = ['pistol', 'ar', 'deagle', 'shotgun'];
+  const BLOOM_WEAPONS = ['pistol', 'ar', 'deagle', 'shotgun', 'minigun'];
   const BLOOM_CONFIG = {
     pistol:  { perShot: 0.008, max: 0.04,  decay: 0.06,  recoilUp: 0.003, recoilSide: 0.001 },
     ar:      { perShot: 0.006, max: 0.07,  decay: 0.035, recoilUp: 0.004, recoilSide: 0.002 },
     deagle:  { perShot: 0.015, max: 0.05,  decay: 0.06,  recoilUp: 0.005, recoilSide: 0.002 },
     shotgun: { perShot: 0.01,  max: 0.03,  decay: 0.05,  recoilUp: 0.004, recoilSide: 0.001 },
+    minigun: { perShot: 0.003, max: 0.06,  decay: 0.03,  recoilUp: 0.002, recoilSide: 0.003 },
   };
   const BASE_CROSSHAIR_SIZE = {
-    pistol: 24, bow: 22, shotgun: 65, sniper: 80, ar: 24, deagle: 26,
+    pistol: 24, bow: 22, shotgun: 110, sniper: 80, ar: 24, deagle: 26, minigun: 30,
   };
 
   const BULLET_SPEED = 80;
@@ -37,19 +41,18 @@ const FPSShooting = (() => {
   }
 
   function checkKnightUlt() {
-    return isPlayground() ? Playground.isKnightUltActive() : checkKnightUlt();
+    return isPlayground() ? Playground.isKnightUltActive() : FPSAbilities.isKnightUltActive();
   }
 
   function consumeKnightUltCheck() {
     if (isPlayground()) Playground.consumeKnightUlt();
-    else consumeKnightUltCheck();
+    else FPSAbilities.consumeKnightUlt();
   }
 
   function getCrosshair() {
-    return document.getElementById('crosshair-pg') &&
-           document.getElementById('screen-playground')?.classList.contains('active')
+    return isPlayground()
       ? document.getElementById('crosshair-pg')
-      : getCrosshair();
+      : document.getElementById('crosshair');
   }
 
   function init(stats) {
@@ -61,6 +64,10 @@ const FPSShooting = (() => {
     mouseHeld = false;
     pumpPending = false;
     boltPending = false;
+    minigunSpunUp = false;
+    minigunSpinStart = 0;
+    Audio.stop('minigunFire');
+    Audio.stop('minigunSpinup');
     bloom = 0;
     recoilOffsetX = 0;
     recoilOffsetY = 0;
@@ -81,6 +88,15 @@ const FPSShooting = (() => {
       startCharge();
       return;
     }
+    if (weapon.type === 'minigun') {
+      if (isReloading || FPSGun.isReloading()) return;
+      if (ammo <= 0) { Audio.play('emptyClick'); return; }
+      minigunSpunUp = false;
+      minigunSpinStart = performance.now();
+      Audio.play('minigunSpinup');
+      FPSGun.setMinigunSpinup(true);
+      return;
+    }
     if (isReloading && weapon.reloadPerShell && ammo > 0) {
       cancelReload();
     }
@@ -92,10 +108,47 @@ const FPSShooting = (() => {
     if (weapon.type === 'bow' && charging) {
       releaseBow(camera, opponentMesh, stats, coverMeshes);
     }
+    if (weapon.type === 'minigun') {
+      Audio.stop('minigunSpinup');
+      if (minigunSpunUp) {
+        if (minigunFireLoop) { minigunFireLoop.pause(); minigunFireLoop = null; }
+        Audio.stop('minigunFire');
+        Audio.play('minigunWinddown');
+      }
+      minigunSpunUp = false;
+      FPSGun.setMinigunSpin(false);
+      FPSGun.setMinigunSpinup(false);
+    }
   }
 
   function onMouseHeld(camera, opponentMesh, stats, coverMeshes) {
-    if (!mouseHeld || !weapon.auto || (!isPlayground() && FPSAbilities.isDisarmed())) return;
+    if (!mouseHeld || (!isPlayground() && FPSAbilities.isDisarmed())) return;
+    if (weapon.type === 'minigun') {
+      if (isReloading || FPSGun.isReloading()) return;
+      const elapsed = performance.now() - minigunSpinStart;
+      if (!minigunSpunUp && elapsed >= (weapon.spinupTime || 500)) {
+        minigunSpunUp = true;
+        Audio.stop('minigunSpinup');
+        FPSGun.setMinigunSpin(true);
+        minigunFireLoop = Audio.play('minigunFire');
+        if (minigunFireLoop) minigunFireLoop.loop = true;
+      }
+      if (minigunSpunUp) {
+        if (ammo <= 0) {
+          minigunSpunUp = false;
+          if (minigunFireLoop) { minigunFireLoop.pause(); minigunFireLoop = null; }
+          Audio.stop('minigunFire');
+          Audio.play('minigunWinddown');
+          FPSGun.setMinigunSpin(false);
+          showOutOfAmmo();
+          Audio.play('outOfAmmo');
+          return;
+        }
+        tryShoot(camera, opponentMesh, stats, coverMeshes);
+      }
+      return;
+    }
+    if (!weapon.auto) return;
     tryShoot(camera, opponentMesh, stats, coverMeshes);
   }
 
@@ -124,10 +177,10 @@ const FPSShooting = (() => {
     }
 
     const chargePercent = Math.min(chargeTime / weapon.chargeTime, 1);
-    const damage = weapon.damageMin + (weapon.damageMax - weapon.damageMin) * chargePercent;
+    const isExplosive = checkKnightUlt();
+    const damage = isExplosive ? 150 : weapon.damageMin + (weapon.damageMax - weapon.damageMin) * chargePercent;
 
     FPSGun.bowRelease();
-    const isExplosive = checkKnightUlt();
     Audio.stop('knightUltCharge');
     Audio.stop('bowDraw');
     Audio.play(isExplosive ? 'knightUltShot' : 'bowRelease');
@@ -173,7 +226,7 @@ const FPSShooting = (() => {
         const d = pos.distanceTo(opPos);
         const radius = 5;
         if (d < radius) {
-          const falloff = 1 - (d / radius);
+          const falloff = d < 2 ? 1 : 1 - ((d - 2) / (radius - 2));
           const dmg = Math.round(damage * falloff);
           if (dmg > 0) {
             Network.sendDuelHit(dmg, false, FPS.getMyHP());
@@ -185,9 +238,24 @@ const FPSShooting = (() => {
       }
     }
 
+    const HOMING_RADIUS = 8;
+    const HOMING_STRENGTH = 0.08;
+
     const animate = () => {
       const step = speed * 0.016;
       dist += step;
+
+      if (opponentMesh) {
+        const opPos = new THREE.Vector3();
+        opponentMesh.getWorldPosition(opPos);
+        const toOp = opPos.clone().sub(arrow.position);
+        const distToOp = toOp.length();
+        if (distToOp < HOMING_RADIUS && distToOp > 1.5) {
+          toOp.normalize();
+          dir.lerp(toOp, HOMING_STRENGTH).normalize();
+        }
+      }
+
       arrow.position.addScaledVector(dir, step);
       const p = arrow.position;
 
@@ -229,6 +297,13 @@ const FPSShooting = (() => {
     if (weapon.type === 'bow') return;
 
     if (ammo <= 0) {
+      if (weapon.type === 'minigun' && minigunSpunUp) {
+        minigunSpunUp = false;
+        Audio.stop('minigunFire');
+        if (minigunFireLoop) { minigunFireLoop.pause(); minigunFireLoop = null; }
+        Audio.play('minigunWinddown');
+        FPSGun.setMinigunSpin(false);
+      }
       const now = performance.now();
       if (now - lastShotTime > 300) {
         Audio.play('emptyClick');
@@ -244,8 +319,9 @@ const FPSShooting = (() => {
     lastShotTime = now;
     ammo--;
 
-    const fireSound = weapon.sounds.fire;
-    Audio.play(fireSound);
+    if (weapon.type !== 'minigun') {
+      Audio.play(weapon.sounds.fire);
+    }
     FPSGun.recoil();
     FPSHUD.updateAmmo(ammo, maxAmmo);
 
@@ -268,7 +344,8 @@ const FPSShooting = (() => {
     } else if (weapon.type === 'sniper') {
       let spread = FPSGun.getIsADS() ? 0 : weapon.unscopedSpread;
       if (!FPSPlayer.isOnGround()) spread = weapon.jumpingSpread || spread * 2;
-      fireBullet(camera, opponentMesh, weapon.damage, spread, coverMeshes);
+      const scopedAssist = FPSGun.getIsADS() ? (weapon.scopedAimAssist || 0) : 0;
+      fireBullet(camera, opponentMesh, weapon.damage, spread, coverMeshes, scopedAssist);
       if (ammo > 0) {
         boltPending = true;
         setTimeout(() => {
@@ -278,6 +355,8 @@ const FPSShooting = (() => {
       }
     } else if (weapon.type === 'deagle') {
       fireBullet(camera, opponentMesh, weapon.damage, 0, coverMeshes, weapon.aimAssist);
+    } else if (weapon.type === 'minigun') {
+      fireBullet(camera, opponentMesh, weapon.damage, 0.025, coverMeshes);
     } else if (weapon.type === 'ar') {
       const baseSpread = FPSGun.getIsADS() ? 0.005 : 0.02;
       const adsBloomReduction = FPSGun.getIsADS() ? 0.5 : 1;
@@ -313,11 +392,17 @@ const FPSShooting = (() => {
     const raycaster = new THREE.Raycaster();
 
     if (aimAssist && aimAssist > 0) {
-      const toOpponent = new THREE.Vector3();
-      opponentMesh.getWorldPosition(toOpponent);
-      toOpponent.sub(camera.position).normalize();
-      const aimDir = dir.clone().lerp(toOpponent, aimAssist).normalize();
-      raycaster.set(camera.position, aimDir);
+      const opWorldPos = new THREE.Vector3();
+      opponentMesh.getWorldPosition(opWorldPos);
+      const toOpponent = opWorldPos.clone().sub(camera.position);
+      const angleDiff = dir.angleTo(toOpponent.clone().normalize());
+      if (angleDiff < 0.15) {
+        toOpponent.normalize();
+        const aimDir = dir.clone().lerp(toOpponent, aimAssist).normalize();
+        raycaster.set(camera.position, aimDir);
+      } else {
+        raycaster.set(camera.position, dir);
+      }
     } else {
       raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
     }
@@ -334,7 +419,12 @@ const FPSShooting = (() => {
       const hitOpponent = isChildOf(closest.object, opponentMesh);
       if (hitOpponent) {
         const isHeadshot = checkHeadshot(closest, opponentMesh);
-        const finalDamage = isHeadshot ? damage * 2 : damage;
+        let baseDmg = damage;
+        if (weapon.dropoffStart && weapon.dropoffEnd && closest.distance > weapon.dropoffStart) {
+          const t = Math.min((closest.distance - weapon.dropoffStart) / (weapon.dropoffEnd - weapon.dropoffStart), 1);
+          baseDmg = Math.round(damage * (1 - t * (1 - (weapon.dropoffMin || 0.5))));
+        }
+        const finalDamage = isHeadshot ? baseDmg * 2 : baseDmg;
         Network.sendDuelHit(finalDamage, isHeadshot, FPS.getMyHP());
         showHitMarker(isHeadshot);
         Audio.play(isHeadshot ? 'headshot' : 'hitConfirm');

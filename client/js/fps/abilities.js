@@ -166,24 +166,22 @@ const FPSAbilities = (() => {
       spawnBishopBeam();
       Network.emit('duel-ability-effect', { effect: 'bishopBeam' });
       setTimeout(() => {
-        Network.emit('duel-ability-effect', { effect: 'disarm' });
-      }, 800);
+        const myPos = FPSPlayer.position;
+        Network.emit('duel-ability-effect', {
+          effect: 'pull',
+          data: { x: myPos.x, y: myPos.y, z: myPos.z },
+        });
+      }, 600);
     }
 
     if (pieceType === 'r') {
       Audio.play('rookCloak');
-      Network.emit('duel-ability-effect', { effect: 'invisible' });
-      showCloakOverlay(true);
-      setTimeout(() => {
-        Audio.play('whoosh');
-        Network.emit('duel-ability-effect', { effect: 'visible' });
-        showCloakOverlay(false);
-      }, 3000);
+      Network.emit('duel-ability-effect', { effect: 'freeze' });
     }
 
     if (pieceType === 'q') {
       Audio.play('fireballLaunch');
-      launchFireball();
+      launchRingOfFire();
     }
 
     if (pieceType === 'k') {
@@ -221,30 +219,16 @@ const FPSAbilities = (() => {
       spawnBishopBeamFromOpponent();
     }
 
-    if (effect === 'disarm') {
-      disarmed = true;
-      showDisarmOverlay(true);
-      document.getElementById('crosshair').classList.add('hidden');
-      Audio.play('bishopSpell');
-      setTimeout(() => {
-        disarmed = false;
-        showDisarmOverlay(false);
-        document.getElementById('crosshair').classList.remove('hidden');
-      }, 3000);
+    if (effect === 'pull') {
+      applyPull(data);
     }
 
-    if (effect === 'invisible') {
-      Audio.play('rookCloak');
-      FPSOpponent.setVisible(false);
+    if (effect === 'freeze') {
+      applyFreeze();
     }
 
-    if (effect === 'visible') {
-      Audio.play('whoosh');
-      FPSOpponent.setVisible(true);
-    }
-
-    if (effect === 'fireball') {
-      spawnOpponentFireball(data);
+    if (effect === 'ringOfFire') {
+      spawnOpponentRingOfFire(data);
     }
 
     if (effect === 'airstrike') {
@@ -494,12 +478,12 @@ const FPSAbilities = (() => {
     scene.add(bomb);
 
     const bombFall = () => {
-      bomb.position.y -= 0.3;
+      bomb.position.y -= 0.6;
       if (bomb.position.y > 0.5) {
         requestAnimationFrame(bombFall);
       }
     };
-    setTimeout(() => requestAnimationFrame(bombFall), 1800);
+    setTimeout(() => requestAnimationFrame(bombFall), 400);
 
     setTimeout(() => {
       warningEl.remove();
@@ -509,8 +493,9 @@ const FPSAbilities = (() => {
       Audio.play('airstrikeBoom');
 
       FPSEffects.explode(scene, new THREE.Vector3(targetPos.x, 1, targetPos.z), 0xff4400);
-      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x + 1.5, 0.5, targetPos.z - 1), 0xff8800);
-      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x - 1, 1, targetPos.z + 1.5), 0xff6600);
+      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x + 2, 0.5, targetPos.z - 1.5), 0xff8800);
+      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x - 1.5, 1, targetPos.z + 2), 0xff6600);
+      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x, 2, targetPos.z), 0xff4400);
 
       const flashEl = document.createElement('div');
       flashEl.style.cssText =
@@ -523,15 +508,15 @@ const FPSAbilities = (() => {
       const dist = Math.sqrt(
         (myPos.x - targetPos.x) ** 2 + (myPos.z - targetPos.z) ** 2
       );
-      const radius = 6;
+      const radius = 8;
       if (dist < radius) {
         const falloff = 1 - (dist / radius);
-        const damage = Math.round(150 * falloff);
+        const damage = Math.round(300 * falloff);
         if (damage > 0 && selfDamageCallback) {
           selfDamageCallback(damage);
         }
       }
-    }, 2500);
+    }, 1000);
   }
 
   function spawnExplosion(data) {
@@ -542,10 +527,10 @@ const FPSAbilities = (() => {
 
     const myPos = FPSPlayer.position;
     const dist = myPos.distanceTo(pos);
-    const radius = 4;
+    const radius = 5;
     if (dist < radius) {
-      const falloff = 1 - (dist / radius);
-      const damage = Math.round(90 * falloff);
+      const falloff = dist < 2 ? 1 : 1 - ((dist - 2) / (radius - 2));
+      const damage = Math.round(120 * falloff);
       if (damage > 0 && selfDamageCallback) {
         selfDamageCallback(damage);
       }
@@ -560,7 +545,7 @@ const FPSAbilities = (() => {
     const targetPos = new THREE.Vector3();
     opMesh.getWorldPosition(targetPos);
 
-    const markerGeo = new THREE.RingGeometry(4, 6, 24);
+    const markerGeo = new THREE.RingGeometry(5, 8, 24);
     const markerMat = new THREE.MeshBasicMaterial({
       color: 0xff0000, transparent: true, opacity: 0.4, side: THREE.DoubleSide,
     });
@@ -569,27 +554,37 @@ const FPSAbilities = (() => {
     marker.position.set(targetPos.x, 0.15, targetPos.z);
     scene.add(marker);
 
-    const bombGeo = new THREE.SphereGeometry(0.4, 6, 4);
+    const bombGeo = new THREE.SphereGeometry(0.5, 6, 4);
     const bombMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
     const bomb = new THREE.Mesh(bombGeo, bombMat);
     bomb.position.set(targetPos.x, 25, targetPos.z);
     scene.add(bomb);
 
     const bombFall = () => {
-      bomb.position.y -= 0.3;
-      if (bomb.position.y > 0.5) {
-        requestAnimationFrame(bombFall);
-      }
+      bomb.position.y -= 0.6;
+      if (bomb.position.y > 0.5) requestAnimationFrame(bombFall);
     };
-    setTimeout(() => requestAnimationFrame(bombFall), 1800);
+    setTimeout(() => requestAnimationFrame(bombFall), 400);
 
     setTimeout(() => {
       scene.remove(marker);
       scene.remove(bomb);
       Audio.play('airstrikeBoom');
       FPSEffects.explode(scene, new THREE.Vector3(targetPos.x, 1, targetPos.z), 0xff4400);
-      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x + 1, 0.5, targetPos.z - 1), 0xff8800);
-    }, 2500);
+      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x + 2, 0.5, targetPos.z - 1.5), 0xff8800);
+      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x - 1.5, 1, targetPos.z + 2), 0xff6600);
+
+      const myPos = FPSPlayer.position;
+      const dist = Math.sqrt(
+        (myPos.x - targetPos.x) ** 2 + (myPos.z - targetPos.z) ** 2
+      );
+      const radius = 8;
+      if (dist < radius && selfDamageCallback) {
+        const falloff = 1 - (dist / radius);
+        const damage = Math.round(300 * falloff);
+        if (damage > 0) selfDamageCallback(damage);
+      }
+    }, 1000);
   }
 
   function spawnBishopBeamFromOpponent() {
@@ -662,22 +657,276 @@ const FPSAbilities = (() => {
     setTimeout(fadeBeam, 200);
   }
 
+  let frozen = false;
+
+  function applyPull(data) {
+    Audio.play('bishopSpell');
+    const bishopPos = new THREE.Vector3(data.x, data.y, data.z);
+    const pullSpeed = 8;
+    const pullDuration = 3000;
+    const startTime = performance.now();
+
+    showPullOverlay(true);
+
+    const pullInterval = setInterval(() => {
+      const elapsed = performance.now() - startTime;
+      if (elapsed >= pullDuration) {
+        clearInterval(pullInterval);
+        showPullOverlay(false);
+        return;
+      }
+
+      const myPos = FPSPlayer.position;
+      const toBishop = bishopPos.clone().sub(myPos);
+      toBishop.y = 0;
+      const dist = toBishop.length();
+
+      if (dist < 2) {
+        clearInterval(pullInterval);
+        showPullOverlay(false);
+        return;
+      }
+
+      toBishop.normalize();
+      const step = pullSpeed * 0.016;
+      const newX = myPos.x + toBishop.x * step;
+      const newZ = myPos.z + toBishop.z * step;
+
+      const colliders = FPSArena.getColliders();
+      let blocked = false;
+      const R = 0.3;
+      for (const c of colliders) {
+        if (newX + R > c.minX && newX - R < c.maxX &&
+            newZ + R > c.minZ && newZ - R < c.maxZ &&
+            myPos.y > c.minY && myPos.y - 1.6 < c.maxY) {
+          blocked = true;
+          break;
+        }
+      }
+
+      if (!blocked) {
+        myPos.x = newX;
+        myPos.z = newZ;
+      }
+    }, 16);
+  }
+
+  function showPullOverlay(show) {
+    let el = document.getElementById('pull-overlay');
+    if (show) {
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'pull-overlay';
+        el.style.cssText =
+          'position:fixed;top:0;left:0;width:100%;height:100%;z-index:55;' +
+          'pointer-events:none;' +
+          'background:radial-gradient(circle,transparent 30%,rgba(155,89,182,0.15) 100%);';
+        document.body.appendChild(el);
+      }
+    } else {
+      if (el) el.remove();
+    }
+  }
+
+  function applyFreeze() {
+    Audio.play('rookCloak');
+    frozen = true;
+    passiveState.frozen = true;
+
+    let el = document.getElementById('freeze-overlay');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'freeze-overlay';
+      el.style.cssText =
+        'position:fixed;top:0;left:0;width:100%;height:100%;z-index:55;' +
+        'pointer-events:none;' +
+        'background:rgba(100,180,255,0.2);' +
+        'border:4px solid rgba(100,180,255,0.4);';
+      const text = document.createElement('div');
+      text.style.cssText =
+        'position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);' +
+        'color:#88ccff;font-size:1.8rem;font-weight:bold;' +
+        'text-shadow:0 0 30px rgba(100,180,255,0.6);letter-spacing:4px;';
+      text.textContent = 'FROZEN';
+      el.appendChild(text);
+      document.body.appendChild(el);
+    }
+
+    setTimeout(() => {
+      frozen = false;
+      passiveState.frozen = false;
+      Audio.play('whoosh');
+      const overlay = document.getElementById('freeze-overlay');
+      if (overlay) overlay.remove();
+    }, 1000);
+  }
+
+  function isFrozen() { return frozen; }
+
+  function launchRingOfFire() {
+    const scene = FPSRenderer.getScene();
+    const origin = FPSPlayer.position.clone();
+    origin.y = 0.5;
+
+    Network.emit('duel-ability-effect', {
+      effect: 'ringOfFire',
+      data: { x: origin.x, y: origin.y, z: origin.z },
+    });
+
+    spawnRingOfFire(scene, origin, true);
+  }
+
+  function spawnOpponentRingOfFire(data) {
+    const scene = FPSRenderer.getScene();
+    const origin = new THREE.Vector3(data.x, data.y, data.z);
+    Audio.play('fireballLaunch');
+    spawnRingOfFire(scene, origin, false);
+  }
+
+  function spawnRingOfFire(scene, origin, isMine) {
+    const ringSpeed = 10;
+    const maxRadius = 30;
+    const ringHeight = 3;
+    const ringThickness = 0.8;
+    const damage = 350;
+    let currentRadius = 1;
+    let hasHit = false;
+
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xff3300, transparent: true, opacity: 0.9, side: THREE.DoubleSide,
+    });
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0xff6600, transparent: true, opacity: 0.7, side: THREE.DoubleSide,
+    });
+    let ringMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, ringHeight, 24, 1, true),
+      ringMat
+    );
+    ringMesh.position.set(origin.x, ringHeight / 2, origin.z);
+    scene.add(ringMesh);
+
+    let innerRing = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.6, 0.6, ringHeight * 0.6, 24, 1, true),
+      innerMat
+    );
+    innerRing.position.set(origin.x, ringHeight * 0.3, origin.z);
+    scene.add(innerRing);
+
+    const light = new THREE.PointLight(0xff4400, 4, 20);
+    light.position.set(origin.x, ringHeight / 2, origin.z);
+    scene.add(light);
+
+    const animate = () => {
+      if (!active && !isMine) {
+        scene.remove(ringMesh); scene.remove(innerRing); scene.remove(light); return;
+      }
+
+      currentRadius += ringSpeed * 0.016;
+
+      ringMesh.geometry.dispose();
+      ringMesh.geometry = new THREE.CylinderGeometry(
+        currentRadius, currentRadius, ringHeight, 24, 1, true
+      );
+      innerRing.geometry.dispose();
+      innerRing.geometry = new THREE.CylinderGeometry(
+        Math.max(0, currentRadius - ringThickness),
+        Math.max(0, currentRadius - ringThickness),
+        ringHeight * 0.6, 24, 1, true
+      );
+
+      const fade = Math.max(0, 1 - (currentRadius / maxRadius) * 0.7);
+      ringMat.opacity = 0.9 * fade;
+      innerMat.opacity = 0.7 * fade;
+
+      light.intensity = Math.max(0, 3 * (1 - currentRadius / maxRadius));
+
+      if (!isMine && !hasHit) {
+        const myPos = FPSPlayer.position;
+        const dist2D = Math.sqrt(
+          (myPos.x - origin.x) ** 2 + (myPos.z - origin.z) ** 2
+        );
+        const isInRing = Math.abs(dist2D - currentRadius) < 1.5;
+        const isAboveRing = myPos.y - 1.6 > ringHeight;
+
+        if (isInRing && !isAboveRing) {
+          let blocked = false;
+          const colliders = FPSArena.getColliders();
+          const dirToPlayer = new THREE.Vector2(
+            myPos.x - origin.x, myPos.z - origin.z
+          ).normalize();
+
+          for (const c of colliders) {
+            const steps = 5;
+            for (let s = 0; s < steps; s++) {
+              const t = (currentRadius - 2) + (s / steps) * 4;
+              const checkX = origin.x + dirToPlayer.x * t;
+              const checkZ = origin.z + dirToPlayer.y * t;
+              if (checkX > c.minX && checkX < c.maxX &&
+                  checkZ > c.minZ && checkZ < c.maxZ &&
+                  origin.y < c.maxY && origin.y + ringHeight > c.minY) {
+                blocked = true;
+                break;
+              }
+            }
+            if (blocked) break;
+          }
+
+          if (!blocked) {
+            hasHit = true;
+            if (selfDamageCallback) selfDamageCallback(damage);
+          }
+        }
+      }
+
+      if (isMine) {
+        FPSArena.damageAt(
+          new THREE.Vector3(origin.x + currentRadius, 1, origin.z), 25
+        );
+        FPSArena.damageAt(
+          new THREE.Vector3(origin.x - currentRadius, 1, origin.z), 25
+        );
+        FPSArena.damageAt(
+          new THREE.Vector3(origin.x, 1, origin.z + currentRadius), 25
+        );
+        FPSArena.damageAt(
+          new THREE.Vector3(origin.x, 1, origin.z - currentRadius), 25
+        );
+      }
+
+      if (currentRadius >= maxRadius) {
+        scene.remove(ringMesh);
+        scene.remove(innerRing);
+        scene.remove(light);
+        ringMesh.geometry.dispose();
+        innerRing.geometry.dispose();
+        return;
+      }
+
+      requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }
+
   function cleanup() {
     active = false;
     disarmed = false;
     flashed = false;
+    frozen = false;
     passiveState = {};
     hideFlashOverlay();
     showDisarmOverlay(false);
     showForcefield(false);
     showCloakOverlay(false);
+    showPullOverlay(false);
     const warning = document.getElementById('airstrike-warning');
     if (warning) warning.remove();
+    const freezeOv = document.getElementById('freeze-overlay');
+    if (freezeOv) freezeOv.remove();
   }
 
   return {
     init, update, tryUlt, onOpponentAbility, onOpponentEffect,
-    processDamage, isDisarmed, isFlashed, isKnightUltActive, consumeKnightUlt,
+    processDamage, isDisarmed, isFlashed, isFrozen, isKnightUltActive, consumeKnightUlt,
     canBishopResurrect, useBishopResurrect, setSelfDamageCallback,
     getPieceType, cleanup,
   };

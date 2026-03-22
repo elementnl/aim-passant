@@ -60,7 +60,8 @@ const FPSPlayer = (() => {
   }
 
   function update(dt, speed) {
-    const { GRAVITY, ARENA_SIZE, PLAYER_HEIGHT, MOUSE_SENSITIVITY, PITCH_LIMIT } = FPSConfig;
+    const { GRAVITY, PLAYER_HEIGHT, MOUSE_SENSITIVITY, PITCH_LIMIT } = FPSConfig;
+    const ARENA_SIZE = FPSArena.getArenaSize ? FPSArena.getArenaSize() : FPSConfig.ARENA_SIZE;
 
     const forward = new THREE.Vector3(-Math.sin(rotation.yaw), 0, -Math.cos(rotation.yaw));
     const right = new THREE.Vector3(Math.cos(rotation.yaw), 0, -Math.sin(rotation.yaw));

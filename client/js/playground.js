@@ -340,7 +340,7 @@ const Playground = (() => {
 
     if (myPiece === 'q') {
       Audio.play('fireballLaunch');
-      launchFireball();
+      launchRingOfFire();
     }
 
     if (myPiece === 'k') {
@@ -444,36 +444,95 @@ const Playground = (() => {
     requestAnimationFrame(animate);
   }
 
+  function launchRingOfFire() {
+    const scene = FPSRenderer.getScene();
+    const origin = FPSPlayer.position.clone();
+    origin.y = 0.5;
+
+    const ringSpeed = 10;
+    const maxRadius = 30;
+    const ringHeight = 3;
+    let currentRadius = 1;
+
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xff3300, transparent: true, opacity: 0.9, side: THREE.DoubleSide,
+    });
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: 0xff6600, transparent: true, opacity: 0.7, side: THREE.DoubleSide,
+    });
+    let ringMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, ringHeight, 24, 1, true), ringMat
+    );
+    ringMesh.position.set(origin.x, ringHeight / 2, origin.z);
+    scene.add(ringMesh);
+
+    let innerRing = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.6, 0.6, ringHeight * 0.6, 24, 1, true), innerMat
+    );
+    innerRing.position.set(origin.x, ringHeight * 0.3, origin.z);
+    scene.add(innerRing);
+
+    const light = new THREE.PointLight(0xff4400, 4, 20);
+    light.position.set(origin.x, ringHeight / 2, origin.z);
+    scene.add(light);
+
+    const animate = () => {
+      if (!active) { scene.remove(ringMesh); scene.remove(innerRing); scene.remove(light); return; }
+      currentRadius += ringSpeed * 0.016;
+
+      ringMesh.geometry.dispose();
+      ringMesh.geometry = new THREE.CylinderGeometry(currentRadius, currentRadius, ringHeight, 24, 1, true);
+      innerRing.geometry.dispose();
+      innerRing.geometry = new THREE.CylinderGeometry(
+        Math.max(0, currentRadius - 0.6), Math.max(0, currentRadius - 0.6), ringHeight * 0.6, 24, 1, true
+      );
+
+      const fade = Math.max(0, 1 - (currentRadius / maxRadius) * 0.7);
+      ringMat.opacity = 0.9 * fade;
+      innerMat.opacity = 0.7 * fade;
+      light.intensity = Math.max(0, 4 * fade);
+
+      if (currentRadius >= maxRadius) {
+        scene.remove(ringMesh); scene.remove(innerRing); scene.remove(light);
+        ringMesh.geometry.dispose(); innerRing.geometry.dispose();
+        return;
+      }
+      requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }
+
   function launchAirstrike() {
     const scene = FPSRenderer.getScene();
     const targetPos = dummyMesh.position.clone();
 
-    const markerGeo = new THREE.RingGeometry(4, 6, 24);
+    const markerGeo = new THREE.RingGeometry(5, 8, 24);
     const markerMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
     const marker = new THREE.Mesh(markerGeo, markerMat);
     marker.rotation.x = -Math.PI / 2;
     marker.position.set(targetPos.x, 0.15, targetPos.z);
     scene.add(marker);
 
-    const bombGeo = new THREE.SphereGeometry(0.4, 6, 4);
+    const bombGeo = new THREE.SphereGeometry(0.5, 6, 4);
     const bombMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
     const bomb = new THREE.Mesh(bombGeo, bombMat);
     bomb.position.set(targetPos.x, 25, targetPos.z);
     scene.add(bomb);
 
     const bombFall = () => {
-      bomb.position.y -= 0.3;
+      bomb.position.y -= 0.6;
       if (bomb.position.y > 0.5) requestAnimationFrame(bombFall);
     };
-    setTimeout(() => requestAnimationFrame(bombFall), 1800);
+    setTimeout(() => requestAnimationFrame(bombFall), 400);
 
     setTimeout(() => {
       scene.remove(marker);
       scene.remove(bomb);
       Audio.play('airstrikeBoom');
       FPSEffects.explode(scene, new THREE.Vector3(targetPos.x, 1, targetPos.z), 0xff4400);
-      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x + 1, 0.5, targetPos.z - 1), 0xff8800);
-    }, 2500);
+      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x + 2, 0.5, targetPos.z - 1.5), 0xff8800);
+      FPSEffects.explode(scene, new THREE.Vector3(targetPos.x - 1.5, 1, targetPos.z + 2), 0xff6600);
+    }, 1000);
   }
 
   function updateHUD() {

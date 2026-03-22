@@ -7,6 +7,9 @@ const FPSGun = (() => {
   let bowString = null;
   let bowArrow = null;
   let bowDrawAmount = 0;
+  let minigunBarrels = null;
+  let minigunSpinSpeed = 0;
+  let minigunTargetSpin = 0;
 
   const REST_POS = { x: 0.25, y: -0.22, z: -0.4 };
   const ADS_POS = { x: 0, y: -0.15, z: -0.35 };
@@ -28,6 +31,7 @@ const FPSGun = (() => {
       sniper: buildSniper,
       ar: buildAR,
       deagle: buildDeagle,
+      minigun: buildMinigun,
     };
 
     (builders[weaponType] || buildPistol)(gunGroup);
@@ -250,6 +254,44 @@ const FPSGun = (() => {
     addArm(group, 0, -0.12, -0.04);
   }
 
+  function buildMinigun(group) {
+    const dark = new THREE.MeshLambertMaterial({ color: 0x2a2a2a });
+    const metal = new THREE.MeshLambertMaterial({ color: 0x444444 });
+
+    minigunBarrels = new THREE.Group();
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.45, 4), metal);
+      barrel.rotation.x = Math.PI / 2;
+      barrel.position.set(Math.cos(angle) * 0.04, Math.sin(angle) * 0.04, -0.35);
+      minigunBarrels.add(barrel);
+    }
+    group.add(minigunBarrels);
+    minigunSpinSpeed = 0;
+    minigunTargetSpin = 0;
+
+    const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.25, 6), dark);
+    housing.rotation.x = Math.PI / 2;
+    housing.position.set(0, 0, -0.1);
+    group.add(housing);
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.2), dark);
+    body.position.set(0, -0.01, 0.02);
+    group.add(body);
+
+    const mag = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.15, 0.07), metal);
+    mag.position.set(0, -0.12, -0.02);
+    group.add(mag);
+
+    const grip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.05), dark);
+    grip.position.set(0, -0.09, 0.08);
+    grip.rotation.x = 0.2;
+    group.add(grip);
+
+    addMuzzleFlash(group, 0, 0, -0.6);
+    addArm(group, 0, -0.09, 0.08);
+  }
+
   function addMuzzleFlash(group, x, y, z) {
     const flashMat = new THREE.MeshBasicMaterial({ color: 0xffff88, transparent: true, opacity: 0 });
     muzzleFlash = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.06), flashMat);
@@ -301,6 +343,19 @@ const FPSGun = (() => {
     const target = isADS ? ADS_POS : REST_POS;
     gunGroup.position.x += (target.x - gunGroup.position.x) * 0.15;
     gunGroup.position.y += (target.y - gunGroup.position.y) * 0.15;
+
+    if (minigunBarrels) {
+      minigunSpinSpeed += (minigunTargetSpin - minigunSpinSpeed) * 0.1;
+      minigunBarrels.rotation.z += minigunSpinSpeed;
+    }
+  }
+
+  function setMinigunSpin(spinning) {
+    minigunTargetSpin = spinning ? 0.4 : 0;
+  }
+
+  function setMinigunSpinup(active) {
+    minigunTargetSpin = active ? 0.15 : 0;
   }
 
   function getIsADS() { return isADS; }
@@ -381,10 +436,13 @@ const FPSGun = (() => {
       bowString = null;
       bowArrow = null;
       bowDrawAmount = 0;
+      minigunBarrels = null;
+      minigunSpinSpeed = 0;
+      minigunTargetSpin = 0;
       reloading = false;
       isADS = false;
     }
   }
 
-  return { create, recoil, setADS, updateADS, getIsADS, setBowDraw, bowRelease, playReloadAnimation, isReloading, destroy };
+  return { create, recoil, setADS, updateADS, getIsADS, setBowDraw, bowRelease, setMinigunSpin, setMinigunSpinup, playReloadAnimation, isReloading, destroy };
 })();
