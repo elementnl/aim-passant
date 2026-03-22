@@ -6,7 +6,7 @@ const Settings = (() => {
     particles: true,
     renderScale: 1.0,
     masterVolume: 1.0,
-    musicVolume: 0.1,
+    musicVolume: 1.0,
     sfxVolume: 1.0,
     sensitivity: 1.0,
     scopedSensitivity: 0.4,

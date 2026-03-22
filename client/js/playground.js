@@ -118,6 +118,8 @@ const Playground = (() => {
       stop();
     });
 
+    Audio.stopMusic();
+    Audio.playMusic('playground');
     FPSInput.requestPointerLock();
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
@@ -290,6 +292,8 @@ const Playground = (() => {
 
     FPSOpponent.destroy(FPSRenderer.getScene());
 
+    Audio.stopMusic();
+    Audio.playMusic('lobby');
     LobbyBG.init();
     Game.showScreen('lobby');
   }

@@ -45,6 +45,7 @@ const Audio = (() => {
     minigunWinddown:{ src: 'sounds/minigun-winddown.wav', volume: 0.4 },
     minigunReload:  { src: 'sounds/minigun-reload.wav',  volume: 0.5 },
     duelStart:      { src: 'sounds/duel-start.mp3',     volume: 0.7 },
+    uiClick:        { src: 'sounds/ui-click.mp3',      volume: 1 },
 
     pawnFlashbang:    { src: 'sounds/pawn-flashbang.wav',     volume: 0.6 },
     knightUltCharge:  { src: 'sounds/knight-ult-charge.mp3',  volume: 0.5 },
@@ -77,6 +78,8 @@ const Audio = (() => {
       audio.preload = 'auto';
       sounds[name] = { audio, baseVolume: def.volume };
     }
+    masterVolume = Settings.get('masterVolume');
+    if (masterVolume === undefined || masterVolume === null) masterVolume = 1.0;
   }
 
   const activeSounds = {};
@@ -85,8 +88,10 @@ const Audio = (() => {
     const entry = sounds[name];
     if (!entry) return;
 
+    const sfx = Settings.get('sfxVolume');
+    const sfxVol = (sfx === undefined || sfx === null) ? 1 : sfx;
     const clone = entry.audio.cloneNode();
-    clone.volume = entry.baseVolume * masterVolume;
+    clone.volume = entry.baseVolume * sfxVol * masterVolume;
     clone.play().catch(() => {});
     activeSounds[name] = clone;
     return clone;
@@ -100,22 +105,46 @@ const Audio = (() => {
     }
   }
 
-  let bgMusic = null;
+  let currentMusic = null;
 
-  function playMusic() {
-    if (!bgMusic) {
-      bgMusic = new window.Audio('sounds/bg-music.mp3');
-      bgMusic.loop = true;
-    }
-    bgMusic.volume = 0.1 * masterVolume;
-    bgMusic.currentTime = 0;
-    bgMusic.play().catch(() => {});
+  const MUSIC_TRACKS = {
+    battle: 'sounds/bg-music.mp3',
+    playground: 'sounds/bg-music-playground.mp3',
+    lobby: 'sounds/bg-music-lobby.mp3',
+  };
+
+  let currentMusicTrack = null;
+
+  function getMusicVolume() {
+    const raw = Settings.get('musicVolume');
+    const base = (raw === undefined || raw === null) ? 1 : raw;
+    const caps = { battle: 0.3, playground: 0.5, lobby: 1 };
+    const cap = caps[currentMusicTrack] || 0.5;
+    return base * cap * masterVolume;
+  }
+
+  function playMusic(track) {
+    stopMusic();
+    currentMusicTrack = track;
+    const src = MUSIC_TRACKS[track] || MUSIC_TRACKS.battle;
+    currentMusic = new window.Audio(src);
+    currentMusic.loop = true;
+    currentMusic.volume = getMusicVolume();
+    currentMusic.play().catch(() => {});
   }
 
   function stopMusic() {
-    if (bgMusic) {
-      bgMusic.pause();
-      bgMusic.currentTime = 0;
+    if (currentMusic) {
+      currentMusic.pause();
+      currentMusic.currentTime = 0;
+      currentMusic = null;
+    }
+    currentMusicTrack = null;
+  }
+
+  function updateMusicVolume() {
+    if (currentMusic) {
+      currentMusic.volume = getMusicVolume();
     }
   }
 
@@ -129,5 +158,5 @@ const Audio = (() => {
     }
   }
 
-  return { preload, play, stop, playMusic, stopMusic, setMasterVolume, setVolume };
+  return { preload, play, stop, playMusic, stopMusic, updateMusicVolume, setMasterVolume, setVolume };
 })();

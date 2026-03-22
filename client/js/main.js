@@ -18,11 +18,18 @@ const Game = (() => {
     Audio.preload();
     LobbyBG.init();
     Lobby.init();
+    document.addEventListener('click', () => { Audio.playMusic('lobby'); }, { once: true });
+
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('button, .lobby-btn, .setting-btn, .map-card, .modal-tab');
+      if (el) Audio.play('uiClick');
+    });
     FPS.init();
 
     Network.on('game-start', ({ chess }) => {
       gameOverPending = false;
       LobbyBG.stop();
+      Audio.stopMusic();
       myColor = Lobby.getMyColor();
       ChessUI.init(myColor);
       ChessUI.update(chess);

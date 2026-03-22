@@ -197,6 +197,7 @@ const Lobby = (() => {
 
   function applyLiveSettings() {
     Audio.setMasterVolume(Settings.get('masterVolume'));
+    Audio.updateMusicVolume();
     FPSRenderer.applySettings();
   }
 
