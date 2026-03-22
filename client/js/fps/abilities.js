@@ -150,6 +150,9 @@ const FPSAbilities = (() => {
       Audio.play(voice);
     }
 
+    const ultNames = { p: 'Flashbang', n: 'Explosive Arrow', b: 'Soul Pull', r: 'Freeze', q: 'Ring of Fire', k: 'Airstrike' };
+    KillFeed.ability(true, ultNames[pieceType] || 'Ultimate');
+
     Network.emit('duel-ability', { type: pieceType });
     executeUlt();
   }
@@ -211,6 +214,8 @@ const FPSAbilities = (() => {
     } else if (voice) {
       Audio.play(voice);
     }
+    const ultNames = { p: 'Flashbang', n: 'Explosive Arrow', b: 'Soul Pull', r: 'Freeze', q: 'Ring of Fire', k: 'Airstrike' };
+    KillFeed.ability(false, ultNames[type] || 'Ultimate');
   }
 
   function onOpponentEffect({ effect, data }) {

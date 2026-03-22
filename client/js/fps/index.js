@@ -325,6 +325,7 @@ const FPS = (() => {
     Audio.stop('minigunFire');
     Audio.stop('minigunSpinup');
     FPSShooting.reset();
+    KillFeed.clear();
     FPSAbilities.cleanup();
     FPSHUD.showScope(false);
     FPSHUD.showChargeBar(false);

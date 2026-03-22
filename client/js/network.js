@@ -25,11 +25,13 @@ const Network = (() => {
   }
 
   function createRoom(name, password) {
-    return request('create-room', { name, password });
+    const username = Auth.isLoggedIn() ? Auth.getUsername() : 'Player';
+    return request('create-room', { name, password, username });
   }
 
   function joinRoom(name, password) {
-    return request('join-room', { name, password });
+    const username = Auth.isLoggedIn() ? Auth.getUsername() : 'Player';
+    return request('join-room', { name, password, username });
   }
 
   function startGame() {

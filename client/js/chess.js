@@ -4,6 +4,7 @@ const ChessUI = (() => {
   let selectedSquare = null;
   let validMoves = [];
   let isMyTurn = false;
+  let pieceHP = {};
 
   const PIECE_CHARS = {
     k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F',
@@ -18,6 +19,7 @@ const ChessUI = (() => {
     const hadFen = fen !== null;
     fen = chessState.fen;
     isMyTurn = chessState.turn === myColor;
+    pieceHP = chessState.pieceHP || {};
     selectedSquare = null;
     validMoves = [];
     renderBoard();
@@ -80,6 +82,22 @@ const ChessUI = (() => {
           span.textContent = PIECE_CHARS[cell.piece];
           span.className = cell.color === 'w' ? 'piece-white' : 'piece-black';
           el.appendChild(span);
+
+          const hp = pieceHP[square];
+          const maxHP = PIECE_STATS[cell.piece]?.hp;
+          if (hp !== undefined && maxHP && hp < maxHP) {
+            const pct = Math.max(0, hp / maxHP);
+            const bar = document.createElement('div');
+            bar.className = 'piece-hp-bar';
+            const fill = document.createElement('div');
+            fill.className = 'piece-hp-fill';
+            fill.style.width = (pct * 100) + '%';
+            if (pct > 0.6) fill.style.background = '#2ecc71';
+            else if (pct > 0.3) fill.style.background = '#e9a545';
+            else fill.style.background = '#e74c3c';
+            bar.appendChild(fill);
+            el.appendChild(bar);
+          }
         }
 
         if (selectedSquare === square) el.classList.add('selected');

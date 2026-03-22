@@ -2,20 +2,23 @@ const rooms = require('../rooms');
 const { initChessGame } = require('../game');
 
 module.exports = function registerLobbyHandlers(io, socket) {
-  socket.on('create-room', ({ name, password }, callback) => {
+  socket.on('create-room', ({ name, password, username }, callback) => {
     const result = rooms.create(socket.id, name, password);
     if (result.error) return callback({ error: result.error });
 
     const room = result.room;
+    room.players[0].username = username || 'Player 1';
     socket.join(room.key);
     callback({ name: room.name });
   });
 
-  socket.on('join-room', ({ name, password }, callback) => {
+  socket.on('join-room', ({ name, password, username }, callback) => {
     const result = rooms.join(name, socket.id, password);
     if (result.error) return callback({ error: result.error });
 
     const room = result.room;
+    const player = room.players.find(p => p.id === socket.id);
+    if (player) player.username = username || 'Player 2';
     socket.join(room.key);
     callback({ name: room.name, color: 'black' });
 
@@ -34,7 +37,7 @@ module.exports = function registerLobbyHandlers(io, socket) {
     const chessState = initChessGame(room);
     io.to(room.key).emit('game-start', {
       chess: chessState,
-      players: room.players.map(p => ({ color: p.color })),
+      players: room.players.map(p => ({ color: p.color, username: p.username })),
     });
     callback({ ok: true });
   });

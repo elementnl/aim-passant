@@ -38,11 +38,14 @@ const Game = (() => {
     if (Auth.isLoggedIn()) Lobby.refreshSettingsUI();
     FPS.init();
 
-    Network.on('game-start', ({ chess }) => {
+    let playerNames = {};
+
+    Network.on('game-start', ({ chess, players }) => {
       gameOverPending = false;
       LobbyBG.stop();
       Audio.stopMusic();
       myColor = Lobby.getMyColor();
+      players.forEach(p => { playerNames[p.color] = p.username || p.color; });
       ChessUI.init(myColor);
       ChessUI.update(chess);
       showScreen('chess');
@@ -64,6 +67,10 @@ const Game = (() => {
 
     Network.on('duel-start', ({ attacker, defender, spawns, arenaIndex }) => {
       showScreen('duel');
+      const myName = playerNames[myColor] || 'You';
+      const opColor = myColor === 'white' ? 'black' : 'white';
+      const opName = playerNames[opColor] || 'Opponent';
+      KillFeed.init(myName, opName);
 
       FPS.startDuel({
         myRole: attacker.color === myColor ? 'attacker' : 'defender',
