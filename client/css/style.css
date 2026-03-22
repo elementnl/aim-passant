@@ -92,6 +92,10 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.lobby-buttons .lobby-btn {
+  flex: 1;
+}
+
 .lobby-btn {
   font-family: inherit;
   font-size: 0.95rem;

@@ -111,15 +111,21 @@ const Audio = (() => {
     battle: 'sounds/bg-music.mp3',
     playground: 'sounds/bg-music-playground.mp3',
     lobby: 'sounds/bg-music-lobby.mp3',
+    warehouse: 'sounds/bg-music-warehouse.mp3',
+    bunker: 'sounds/bg-music-bunker.mp3',
+    outpost: 'sounds/bg-music-outpost.mp3',
+    factory: 'sounds/bg-music-factory.mp3',
   };
+
+  const ARENA_MUSIC = ['warehouse', 'bunker', 'outpost', 'factory'];
 
   let currentMusicTrack = null;
 
   function getMusicVolume() {
     const raw = Settings.get('musicVolume');
     const base = (raw === undefined || raw === null) ? 1 : raw;
-    const caps = { battle: 0.3, playground: 0.5, lobby: 1 };
-    const cap = caps[currentMusicTrack] || 0.5;
+    const caps = { lobby: 1 };
+    const cap = caps[currentMusicTrack] || 0.2;
     return base * cap * masterVolume;
   }
 
@@ -158,5 +164,9 @@ const Audio = (() => {
     }
   }
 
-  return { preload, play, stop, playMusic, stopMusic, updateMusicVolume, setMasterVolume, setVolume };
+  function getArenaTrack(arenaIndex) {
+    return ARENA_MUSIC[arenaIndex] || 'battle';
+  }
+
+  return { preload, play, stop, playMusic, stopMusic, updateMusicVolume, getArenaTrack, setMasterVolume, setVolume };
 })();

@@ -132,7 +132,7 @@ const FPS = (() => {
       FPSInput.requestPointerLock();
       FPSHUD.showCountdown(() => {
         duelReady = true;
-        Audio.playMusic('battle');
+        Audio.playMusic(Audio.getArenaTrack(duelInfo.arenaIndex));
         FPSAbilities.init(myPiece, performance.now());
         syncInterval = setInterval(() => {
           if (active && !dying) {
