@@ -1,6 +1,10 @@
 const Settings = (() => {
   const DEFAULTS = {
-    graphics: 'high',
+    shadows: true,
+    antialiasing: true,
+    textures: true,
+    particles: true,
+    renderScale: 1.0,
     masterVolume: 1.0,
     musicVolume: 0.1,
     sfxVolume: 1.0,

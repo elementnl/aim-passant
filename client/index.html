@@ -113,11 +113,38 @@
       <div class="modal-body">
         <div id="tab-graphics" class="tab-panel active">
           <div class="setting-group">
-            <label class="setting-label">Quality</label>
+            <label class="setting-label">Shadows</label>
             <div class="setting-buttons">
-              <button class="setting-btn" data-setting="graphics" data-value="low">Low</button>
-              <button class="setting-btn" data-setting="graphics" data-value="medium">Medium</button>
-              <button class="setting-btn active" data-setting="graphics" data-value="high">High</button>
+              <button class="setting-btn" data-setting="shadows" data-value="false">Off</button>
+              <button class="setting-btn active" data-setting="shadows" data-value="true">On</button>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Anti-Aliasing</label>
+            <div class="setting-buttons">
+              <button class="setting-btn" data-setting="antialiasing" data-value="false">Off</button>
+              <button class="setting-btn active" data-setting="antialiasing" data-value="true">On</button>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Textures</label>
+            <div class="setting-buttons">
+              <button class="setting-btn" data-setting="textures" data-value="false">Off</button>
+              <button class="setting-btn active" data-setting="textures" data-value="true">On</button>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Particles</label>
+            <div class="setting-buttons">
+              <button class="setting-btn" data-setting="particles" data-value="false">Off</button>
+              <button class="setting-btn active" data-setting="particles" data-value="true">On</button>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label class="setting-label">Render Scale</label>
+            <div class="setting-slider-row">
+              <input type="range" id="slider-renderScale" class="setting-slider" min="50" max="100" value="100">
+              <span id="val-renderScale" class="setting-val">100%</span>
             </div>
           </div>
         </div>

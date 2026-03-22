@@ -133,12 +133,22 @@ const FPS = (() => {
         Audio.playMusic();
         FPSAbilities.init(myPiece, performance.now());
         syncInterval = setInterval(() => {
-          if (active && !dying) Network.sendDuelState(FPSPlayer.getState());
+          if (active && !dying) {
+            const state = FPSPlayer.getState();
+            state.hp = myHP;
+            state.maxHP = myMaxHP;
+            Network.sendDuelState(state);
+          }
         }, FPSConfig.SYNC_RATE);
       });
     });
 
-    Network.on('duel-opponent-state', (data) => FPSOpponent.updateFromNetwork(data));
+    Network.on('duel-opponent-state', (data) => {
+      FPSOpponent.updateFromNetwork(data);
+      if (data.hp !== undefined && data.maxHP !== undefined) {
+        FPSOpponent.setHP(data.hp, data.maxHP);
+      }
+    });
     Network.on('duel-opponent-shoot', (data) => {
       FPSShooting.showOpponentTracer(FPSRenderer.getScene(), data);
     });
@@ -307,6 +317,9 @@ const FPS = (() => {
     mouseDown = false;
 
     Audio.stopMusic();
+    Audio.stop('minigunFire');
+    Audio.stop('minigunSpinup');
+    FPSShooting.reset();
     FPSAbilities.cleanup();
     FPSHUD.showScope(false);
     FPSHUD.showChargeBar(false);

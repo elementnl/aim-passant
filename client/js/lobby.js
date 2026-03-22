@@ -120,15 +120,20 @@ const Lobby = (() => {
 
     document.querySelectorAll('.setting-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        Settings.set(btn.dataset.setting, btn.dataset.value);
+        let val = btn.dataset.value;
+        if (val === 'true') val = true;
+        else if (val === 'false') val = false;
+        Settings.set(btn.dataset.setting, val);
         btn.parentElement.querySelectorAll('.setting-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
       });
     });
 
-    const currentGraphics = Settings.get('graphics');
-    document.querySelectorAll('.setting-btn[data-setting="graphics"]').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.value === currentGraphics);
+    ['shadows', 'antialiasing', 'textures', 'particles'].forEach(key => {
+      const current = Settings.get(key);
+      document.querySelectorAll(`.setting-btn[data-setting="${key}"]`).forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === String(current));
+      });
     });
 
     const sliders = {
@@ -137,6 +142,7 @@ const Lobby = (() => {
       sfxVolume:    { display: v => Math.round(v) + '%', toSetting: v => v / 100 },
       sensitivity:  { display: v => (v / 100).toFixed(2), toSetting: v => v / 100 },
       scopedSensitivity: { display: v => (v / 100).toFixed(2), toSetting: v => v / 100 },
+      renderScale:  { display: v => Math.round(v) + '%', toSetting: v => v / 100 },
     };
 
     for (const [key, config] of Object.entries(sliders)) {

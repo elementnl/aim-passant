@@ -29,7 +29,6 @@ const Playground = (() => {
 
     FPSShooting.setHitCallback((dmg) => {
       dummyHP -= dmg;
-      FPSOpponent.takeDamage(dmg);
       if (dummyHP <= 0) {
         Audio.play('explosion');
         const opMesh = FPSOpponent.getMesh();
@@ -43,7 +42,7 @@ const Playground = (() => {
 
     FPSAbilities.setSelfDamageCallback((dmg) => {
       dummyHP -= dmg;
-      FPSOpponent.takeDamage(dmg);
+      FPSOpponent.setHP(Math.max(0, dummyHP), dummyMaxHP);
       if (dummyHP <= 0) {
         Audio.play('explosion');
         const opMesh = FPSOpponent.getMesh();

@@ -61,6 +61,7 @@ const FPSHUD = (() => {
     const isPG = document.getElementById('screen-playground')?.classList.contains('active');
     const spinner = document.getElementById(isPG ? 'pg-reload-spinner' : 'reload-spinner');
     const indicator = document.getElementById('reload-indicator');
+    const crosshair = document.getElementById(isPG ? 'crosshair-pg' : 'crosshair');
     if (spinner) {
       if (show) spinner.classList.remove('hidden');
       else spinner.classList.add('hidden');
@@ -68,6 +69,10 @@ const FPSHUD = (() => {
     if (indicator) {
       if (show) indicator.classList.remove('hidden');
       else indicator.classList.add('hidden');
+    }
+    if (crosshair) {
+      if (show) crosshair.classList.add('hidden');
+      else crosshair.classList.remove('hidden');
     }
   }
 

@@ -539,10 +539,8 @@ const FPSAbilities = (() => {
     const dist = myPos.distanceTo(pos);
     const radius = 5;
     if (dist < radius) {
-      const falloff = dist < 2 ? 1 : 1 - ((dist - 2) / (radius - 2));
-      const damage = Math.round(120 * falloff);
-      if (damage > 0 && selfDamageCallback) {
-        selfDamageCallback(damage);
+      if (selfDamageCallback) {
+        selfDamageCallback(150);
       }
     }
   }
@@ -670,31 +668,70 @@ const FPSAbilities = (() => {
   function throwGrenade() {
     const scene = FPSRenderer.getScene();
     const camera = FPSRenderer.getCamera();
-    const dir = new THREE.Vector3(0, 0.3, -1).applyQuaternion(camera.quaternion).normalize();
-    const origin = camera.position.clone().add(dir.clone().multiplyScalar(0.5));
+    const origin = camera.position.clone();
 
-    const grenadeMat = new THREE.MeshLambertMaterial({ color: 0x556633 });
-    const grenade = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 4), grenadeMat);
-    grenade.position.copy(origin);
+    let targetDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const opMesh = FPSOpponent.getMesh();
+    if (opMesh) {
+      const opPos = new THREE.Vector3();
+      opMesh.getWorldPosition(opPos);
+      targetDir = opPos.sub(origin).normalize();
+    }
+
+    const grenadeMat = new THREE.MeshLambertMaterial({ color: 0x445522 });
+    const grenade = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.1, 6), grenadeMat);
+    grenade.add(body);
+    const cap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.04, 6, 4),
+      new THREE.MeshLambertMaterial({ color: 0x666644 })
+    );
+    cap.position.y = 0.05;
+    grenade.add(cap);
+
+    const startPos = origin.clone().add(targetDir.clone().multiplyScalar(0.5));
+    startPos.y -= 0.2;
+    grenade.position.copy(startPos);
     scene.add(grenade);
 
-    const vel = dir.clone().multiplyScalar(12);
-    vel.y += 4;
+    const vel = targetDir.clone().multiplyScalar(10);
+    vel.y += 5;
     let time = 0;
 
     const animate = () => {
       time += 0.016;
-      vel.y -= 15 * 0.016;
+      vel.y -= 12 * 0.016;
       grenade.position.addScaledVector(vel, 0.016);
+      grenade.rotation.x += 8 * 0.016;
+      grenade.rotation.z += 3 * 0.016;
 
       if (grenade.position.y <= 0.1 || time >= 1) {
-        const flashGeo = new THREE.SphereGeometry(0.3, 8, 6);
-        const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const flashGeo = new THREE.SphereGeometry(0.5, 8, 6);
+        const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
         const flash = new THREE.Mesh(flashGeo, flashMat);
         flash.position.copy(grenade.position);
+        flash.position.y += 0.5;
         scene.add(flash);
         scene.remove(grenade);
-        setTimeout(() => scene.remove(flash), 150);
+
+        const light = new THREE.PointLight(0xffffff, 3, 15);
+        light.position.copy(flash.position);
+        scene.add(light);
+
+        let fadeTime = 0;
+        const fadeFlash = () => {
+          fadeTime += 0.016;
+          flash.scale.setScalar(1 + fadeTime * 2);
+          flashMat.opacity = Math.max(0, 0.9 - fadeTime * 4);
+          light.intensity = Math.max(0, 3 - fadeTime * 12);
+          if (fadeTime < 0.3) {
+            requestAnimationFrame(fadeFlash);
+          } else {
+            scene.remove(flash);
+            scene.remove(light);
+          }
+        };
+        requestAnimationFrame(fadeFlash);
         return;
       }
       requestAnimationFrame(animate);
@@ -753,7 +790,9 @@ const FPSAbilities = (() => {
         }
       }
 
-      if (!blocked) {
+      if (blocked) {
+        FPSArena.damageAt(new THREE.Vector3(newX, myPos.y - 0.8, newZ), 999);
+      } else {
         myPos.x = newX;
         myPos.z = newZ;
       }
@@ -838,7 +877,7 @@ const FPSAbilities = (() => {
     const maxRadius = 30;
     const ringHeight = 3;
     const ringThickness = 0.8;
-    const damage = 350;
+    const damage = 210;
     let currentRadius = 1;
     let hasHit = false;
 

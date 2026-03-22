@@ -147,10 +147,39 @@ const FPSArena = (() => {
     return tex;
   }
 
+  function createCeilingTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#3a3a3a';
+    ctx.fillRect(0, 0, 128, 128);
+
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    for (let i = 0; i <= 128; i += 32) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 128); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(128, i); ctx.stroke();
+    }
+
+    ctx.fillStyle = '#404040';
+    for (let y = 0; y < 128; y += 32) {
+      for (let x = 0; x < 128; x += 32) {
+        ctx.fillRect(x + 4, y + 4, 24, 24);
+      }
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(8, 8);
+    return tex;
+  }
+
   function build(scene, layoutIndex) {
-    const quality = Settings.get('graphics');
-    const useShadows = quality !== 'low';
-    const useTextures = quality !== 'low';
+    const useShadows = Settings.get('shadows') !== false;
+    const useTextures = Settings.get('textures') !== false;
     colliders.length = 0;
     destructibles.length = 0;
 

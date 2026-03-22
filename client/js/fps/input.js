@@ -3,10 +3,15 @@ const FPSInput = (() => {
   const mouse = { x: 0, y: 0 };
   let canvas = null;
   let lockTime = 0;
+  let bound = false;
   const LOCK_GRACE_MS = 50;
 
   function bind(targetCanvas) {
     canvas = targetCanvas;
+
+    if (bound) return;
+    bound = true;
+
     document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
     document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 

@@ -226,8 +226,7 @@ const FPSShooting = (() => {
         const d = pos.distanceTo(opPos);
         const radius = 5;
         if (d < radius) {
-          const falloff = d < 2 ? 1 : 1 - ((d - 2) / (radius - 2));
-          const dmg = Math.round(damage * falloff);
+          const dmg = damage;
           if (dmg > 0) {
             Network.sendDuelHit(dmg, false, FPS.getMyHP());
             FPSOpponent.flashWhite();
