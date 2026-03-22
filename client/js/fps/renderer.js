@@ -66,8 +66,19 @@ const FPSRenderer = (() => {
     camera.updateProjectionMatrix();
   }
 
+  function applySettings() {
+    if (!renderer) return;
+    const useShadows = Settings.get('shadows') !== false;
+    const renderScale = Settings.get('renderScale') || 1;
+
+    renderer.shadowMap.enabled = useShadows;
+    renderer.shadowMap.needsUpdate = true;
+    renderer.setPixelRatio(window.devicePixelRatio * renderScale);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
   function getScene() { return scene; }
   function getCamera() { return camera; }
 
-  return { init, render, setFOV, getScene, getCamera };
+  return { init, render, setFOV, applySettings, getScene, getCamera };
 })();

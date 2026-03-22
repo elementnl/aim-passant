@@ -97,6 +97,17 @@ const FPSOpponent = (() => {
     rot.yaw = data.yaw;
   }
 
+  function forcePosition(x, y, z) {
+    currentPos.set(x, y, z);
+    targetPos.set(x, y, z);
+    if (mesh) {
+      mesh.position.set(x, y - 0.8, z);
+    }
+    if (healthBarGroup) {
+      healthBarGroup.position.set(x, y + 1.1, z);
+    }
+  }
+
   function interpolate() {
     if (!mesh) return;
     currentPos.lerp(targetPos, 0.2);
@@ -164,5 +175,5 @@ const FPSOpponent = (() => {
     }
   }
 
-  return { create, setHP, takeDamage, flashWhite, setVisible, setOutline, updateFromNetwork, interpolate, getMesh, destroy };
+  return { create, setHP, takeDamage, flashWhite, setVisible, setOutline, updateFromNetwork, forcePosition, interpolate, getMesh, destroy };
 })();

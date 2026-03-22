@@ -276,6 +276,11 @@ body {
 
 .modal-close:hover { color: #fff; }
 
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #222;
+}
+
 .modal-tabs {
   display: flex;
   border-bottom: 1px solid #222;

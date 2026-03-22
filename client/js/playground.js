@@ -130,14 +130,7 @@ const Playground = (() => {
 
     FPSOpponent.create(FPSRenderer.getScene(), true, 'q');
     FPSOpponent.setHP(dummyHP, dummyMaxHP);
-    FPSOpponent.updateFromNetwork({
-      x: spawn.x,
-      y: FPSConfig.PLAYER_HEIGHT,
-      z: spawn.z,
-      yaw: 0,
-    });
-    FPSOpponent.interpolate();
-    FPSOpponent.interpolate();
+    FPSOpponent.forcePosition(spawn.x, FPSConfig.PLAYER_HEIGHT, spawn.z);
   }
 
   function getRandomSpawn() {
@@ -301,8 +294,10 @@ const Playground = (() => {
     Game.showScreen('lobby');
   }
 
+  function respawnDummy() { spawnDummy(); }
+  function getWeaponType() { return myStats ? myStats.weapon.type : 'pistol'; }
   function isKnightUltActive() { return FPSAbilities.isKnightUltActive(); }
   function consumeKnightUlt() { FPSAbilities.consumeKnightUlt(); }
 
-  return { start, stop, isKnightUltActive, consumeKnightUlt };
+  return { start, stop, respawnDummy, getWeaponType, isKnightUltActive, consumeKnightUlt };
 })();

@@ -20,6 +20,7 @@ const FPS = (() => {
   }
 
   function rebuildArena(arenaIndex) {
+    FPSArena.resetDestroyed();
     const canvas = document.getElementById('duel-canvas');
     FPSRenderer.init(canvas);
 
@@ -49,6 +50,7 @@ const FPS = (() => {
     FPSPlayer.setJumpSpeed(myStats.jumpSpeed);
     FPSPlayer.setDoubleJump(myPiece === 'n');
     const opponentInfo = isAttacker ? duelInfo.defender : duelInfo.attacker;
+    _opponentPiece = opponentPiece;
     FPSOpponent.create(FPSRenderer.getScene(), isAttacker, opponentPiece);
     FPSOpponent.setHP(
       opponentInfo.currentHP !== undefined ? opponentInfo.currentHP : opponentInfo.stats.hp,
@@ -156,6 +158,9 @@ const FPS = (() => {
     Network.on('duel-opponent-ability', (data) => FPSAbilities.onOpponentAbility(data));
     Network.on('duel-opponent-effect', (data) => {
       FPSAbilities.onOpponentEffect(data);
+    });
+    Network.on('duel-crate-destroy', (data) => {
+      FPSArena.destroyCrate(data.coverIndex);
     });
 
     FPSAbilities.setSelfDamageCallback((damage) => {
@@ -347,6 +352,7 @@ const FPS = (() => {
     Network.off('duel-take-damage');
     Network.off('duel-opponent-ability');
     Network.off('duel-opponent-effect');
+    Network.off('duel-crate-destroy');
 
     setTimeout(() => {
       active = false;
@@ -362,6 +368,11 @@ const FPS = (() => {
 
   function isActive() { return active; }
   function getMyHP() { return myHP; }
+  function getWeaponType() { return myStats ? myStats.weapon.type : 'pistol'; }
+  function getOpponentPiece() { return myRole === 'attacker' ? _opponentPiece : _opponentPiece; }
+  function getMyRole() { return myRole; }
 
-  return { init, startDuel, endDuel, isActive, getMyHP };
+  let _opponentPiece = 'p';
+
+  return { init, startDuel, endDuel, isActive, getMyHP, getWeaponType, getOpponentPiece, getMyRole };
 })();

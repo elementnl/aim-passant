@@ -2,6 +2,7 @@ const FPSArena = (() => {
   const colliders = [];
   const destructibles = [];
   let currentLayout = 0;
+  const destroyedIndices = new Set();
 
   const LAYOUTS = [
     {
@@ -264,7 +265,9 @@ const FPSArena = (() => {
     const coverMeshes = [];
     const colors = { wall: 0x707070, crate: 0x8B7355, pillar: 0x606060, ramp_base: 0x707070, ramp: 0x808060 };
 
-    layout.covers.forEach((cover) => {
+    layout.covers.forEach((cover, coverIndex) => {
+      if (destroyedIndices.has(coverIndex)) return;
+
       const { pos, size, type, destructible } = cover;
       const color = colors[type] || 0x888888;
       const mat = new THREE.MeshLambertMaterial({ color });
@@ -288,7 +291,7 @@ const FPSArena = (() => {
       colliders.push(collider);
 
       if (destructible) {
-        destructibles.push({ mesh, collider, hp: 50, scene });
+        destructibles.push({ mesh, collider, hp: 50, scene, coverIndex });
       }
     });
 
@@ -305,14 +308,36 @@ const FPSArena = (() => {
           point.z > c.minZ - margin && point.z < c.maxZ + margin) {
         d.hp -= damage;
         if (d.hp <= 0) {
+          destroyedIndices.add(d.coverIndex);
           d.scene.remove(d.mesh);
           const idx = colliders.indexOf(d.collider);
           if (idx !== -1) colliders.splice(idx, 1);
           FPSEffects.explode(d.scene, d.mesh.position.clone(), 0x8B7355);
+          Network.emit('duel-crate-destroy', { coverIndex: d.coverIndex });
           destructibles.splice(i, 1);
         }
       }
     }
+  }
+
+  function destroyCrate(coverIndex) {
+    if (destroyedIndices.has(coverIndex)) return;
+    destroyedIndices.add(coverIndex);
+    for (let i = destructibles.length - 1; i >= 0; i--) {
+      if (destructibles[i].coverIndex === coverIndex) {
+        const d = destructibles[i];
+        d.scene.remove(d.mesh);
+        const idx = colliders.indexOf(d.collider);
+        if (idx !== -1) colliders.splice(idx, 1);
+        FPSEffects.explode(d.scene, d.mesh.position.clone(), 0x8B7355);
+        destructibles.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  function resetDestroyed() {
+    destroyedIndices.clear();
   }
 
   function getColliders() { return colliders; }
@@ -322,5 +347,5 @@ const FPSArena = (() => {
     return LAYOUTS[currentLayout]?.arenaSize || FPSConfig.ARENA_SIZE;
   }
 
-  return { build, damageAt, getColliders, getLayoutIndex, getLayoutCount, getArenaSize };
+  return { build, damageAt, destroyCrate, resetDestroyed, getColliders, getLayoutIndex, getLayoutCount, getArenaSize };
 })();

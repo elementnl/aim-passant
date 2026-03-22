@@ -109,6 +109,37 @@ const Lobby = (() => {
       modal.classList.add('hidden');
     });
 
+    document.getElementById('btn-apply-settings').addEventListener('click', () => {
+      const isPG = document.getElementById('screen-playground')?.classList.contains('active');
+      const isDuel = document.getElementById('screen-duel')?.classList.contains('active');
+
+      if (isPG || isDuel) {
+        const canvas = isPG
+          ? document.getElementById('playground-canvas')
+          : document.getElementById('duel-canvas');
+
+        const oldGunType = FPSGun.isReloading() ? null : true;
+        FPSGun.destroy();
+
+        FPSRenderer.init(canvas);
+        const arenaIdx = FPSArena.getLayoutIndex();
+        FPSArena.build(FPSRenderer.getScene(), arenaIdx);
+
+        const weaponType = isPG ? Playground.getWeaponType() : FPS.getWeaponType();
+        FPSGun.create(FPSRenderer.getCamera(), weaponType);
+
+        if (isPG) {
+          Playground.respawnDummy();
+        } else if (isDuel) {
+          const opPiece = FPS.getOpponentPiece();
+          const isAttacker = FPS.getMyRole() === 'attacker';
+          FPSOpponent.create(FPSRenderer.getScene(), isAttacker, opPiece);
+        }
+      }
+
+      modal.classList.add('hidden');
+    });
+
     document.querySelectorAll('.modal-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
@@ -126,6 +157,7 @@ const Lobby = (() => {
         Settings.set(btn.dataset.setting, val);
         btn.parentElement.querySelectorAll('.setting-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        FPSRenderer.applySettings();
       });
     });
 
@@ -158,12 +190,14 @@ const Lobby = (() => {
         valEl.textContent = config.display(slider.value);
         Settings.set(key, config.toSetting(parseFloat(slider.value)));
         applyLiveSettings();
+        if (key === 'renderScale') FPSRenderer.applySettings();
       });
     }
   }
 
   function applyLiveSettings() {
     Audio.setMasterVolume(Settings.get('masterVolume'));
+    FPSRenderer.applySettings();
   }
 
   function showWaitingRoom() {

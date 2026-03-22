@@ -99,7 +99,7 @@ const PIECE_STATS = {
     jumpSpeed: 7,
     weapon: {
       type: 'minigun',
-      damage: 6,
+      damage: 4,
       fireRate: 60,
       magSize: 100,
       reloadTime: 5000,
