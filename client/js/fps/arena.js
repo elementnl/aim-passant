@@ -176,13 +176,37 @@ const FPSArena = (() => {
     scene.add(floor);
 
     if (!layout.noCeiling) {
+      const ceilMat = useTextures
+        ? new THREE.MeshLambertMaterial({ map: createCeilingTexture(), side: THREE.DoubleSide })
+        : new THREE.MeshLambertMaterial({ color: 0x3a3a3a, side: THREE.DoubleSide });
       const ceiling = new THREE.Mesh(
         new THREE.PlaneGeometry(ARENA_SIZE, ARENA_SIZE),
-        new THREE.MeshLambertMaterial({ color: 0x555555 })
+        ceilMat
       );
       ceiling.rotation.x = Math.PI / 2;
       ceiling.position.y = WALL_HEIGHT;
       scene.add(ceiling);
+
+      const beamMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
+      const beamCount = Math.floor(ARENA_SIZE / 8);
+      for (let i = 0; i < beamCount; i++) {
+        const beam = new THREE.Mesh(
+          new THREE.BoxGeometry(ARENA_SIZE, 0.15, 0.3), beamMat
+        );
+        beam.position.set(0, WALL_HEIGHT - 0.08, -ARENA_SIZE / 2 + (i + 0.5) * (ARENA_SIZE / beamCount));
+        scene.add(beam);
+      }
+
+      const lightFixtureMat = new THREE.MeshBasicMaterial({ color: 0xffffcc });
+      for (let x = -1; x <= 1; x += 2) {
+        for (let z = -1; z <= 1; z += 2) {
+          const fixture = new THREE.Mesh(
+            new THREE.BoxGeometry(0.6, 0.08, 0.3), lightFixtureMat
+          );
+          fixture.position.set(x * ARENA_SIZE * 0.2, WALL_HEIGHT - 0.05, z * ARENA_SIZE * 0.2);
+          scene.add(fixture);
+        }
+      }
     }
 
     const half = ARENA_SIZE / 2;

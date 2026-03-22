@@ -6,8 +6,13 @@ const FPSAbilities = (() => {
   let ultNotified = false;
   let active = false;
 
-  const ULT_INITIAL_DELAY = 15000;
-  const ULT_COOLDOWN = 30000;
+  function isInPlayground() {
+    return document.getElementById('screen-playground')?.classList.contains('active');
+  }
+  const ULT_INITIAL_DELAY_NORMAL = 15000;
+  const ULT_COOLDOWN_NORMAL = 30000;
+  const ULT_INITIAL_DELAY_PG = 3000;
+  const ULT_COOLDOWN_PG = 5000;
 
   let passiveState = {};
   let disarmed = false;
@@ -19,7 +24,7 @@ const FPSAbilities = (() => {
   function init(piece, startTime) {
     pieceType = piece;
     duelStartTime = startTime;
-    ultCooldownEnd = startTime + ULT_INITIAL_DELAY;
+    ultCooldownEnd = startTime + (isInPlayground() ? ULT_INITIAL_DELAY_PG : ULT_INITIAL_DELAY_NORMAL);
     ultReady = false;
     ultNotified = false;
     active = true;
@@ -127,7 +132,7 @@ const FPSAbilities = (() => {
     if (!active || !ultReady || disarmed) return;
     ultReady = false;
     ultNotified = false;
-    ultCooldownEnd = performance.now() + ULT_COOLDOWN;
+    ultCooldownEnd = performance.now() + (isInPlayground() ? ULT_COOLDOWN_PG : ULT_COOLDOWN_NORMAL);
 
     const voiceLines = {
       p: 'voicePawnUlt',
@@ -152,6 +157,7 @@ const FPSAbilities = (() => {
   function executeUlt() {
     if (pieceType === 'p') {
       Audio.play('pawnFlashbang');
+      throwGrenade();
       setTimeout(() => {
         Network.emit('duel-ability-effect', { effect: 'flash' });
       }, 1000);
@@ -278,28 +284,32 @@ const FPSAbilities = (() => {
   }
 
   function showFlashOverlay() {
-    let el = document.getElementById('flash-overlay');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'flash-overlay';
-      el.style.cssText =
-        'position:fixed;top:0;left:0;width:100%;height:100%;' +
-        'background:#fff;z-index:60;pointer-events:none;' +
-        'transition:opacity 0.5s ease-in;opacity:1;';
-      document.body.appendChild(el);
-    }
-    el.style.opacity = '1';
+    hideFlashOverlay();
+    const el = document.createElement('div');
+    el.id = 'flash-overlay';
+    el.style.cssText =
+      'position:fixed;top:0;left:0;width:100%;height:100%;' +
+      'background:#fff;z-index:60;pointer-events:none;opacity:1;';
+    document.body.appendChild(el);
     Audio.play('pawnFlashbang');
-    setTimeout(() => { if (el) el.style.opacity = '0.7'; }, 500);
-    setTimeout(() => { if (el) el.style.opacity = '0.3'; }, 1500);
+
+    const fade = () => {
+      if (!document.getElementById('flash-overlay')) return;
+      const remaining = flashEndTime - performance.now();
+      if (remaining <= 0) {
+        hideFlashOverlay();
+        return;
+      }
+      const pct = remaining / 2000;
+      el.style.opacity = String(Math.min(1, pct * 1.5));
+      requestAnimationFrame(fade);
+    };
+    requestAnimationFrame(fade);
   }
 
   function hideFlashOverlay() {
     const el = document.getElementById('flash-overlay');
-    if (el) {
-      el.style.opacity = '0';
-      setTimeout(() => el.remove(), 500);
-    }
+    if (el) el.remove();
   }
 
   function showDisarmOverlay(show) {
@@ -511,7 +521,7 @@ const FPSAbilities = (() => {
       const radius = 8;
       if (dist < radius) {
         const falloff = 1 - (dist / radius);
-        const damage = Math.round(300 * falloff);
+        const damage = Math.round(180 * falloff);
         if (damage > 0 && selfDamageCallback) {
           selfDamageCallback(damage);
         }
@@ -581,7 +591,7 @@ const FPSAbilities = (() => {
       const radius = 8;
       if (dist < radius && selfDamageCallback) {
         const falloff = 1 - (dist / radius);
-        const damage = Math.round(300 * falloff);
+        const damage = Math.round(180 * falloff);
         if (damage > 0) selfDamageCallback(damage);
       }
     }, 1000);
@@ -657,10 +667,47 @@ const FPSAbilities = (() => {
     setTimeout(fadeBeam, 200);
   }
 
+  function throwGrenade() {
+    const scene = FPSRenderer.getScene();
+    const camera = FPSRenderer.getCamera();
+    const dir = new THREE.Vector3(0, 0.3, -1).applyQuaternion(camera.quaternion).normalize();
+    const origin = camera.position.clone().add(dir.clone().multiplyScalar(0.5));
+
+    const grenadeMat = new THREE.MeshLambertMaterial({ color: 0x556633 });
+    const grenade = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 4), grenadeMat);
+    grenade.position.copy(origin);
+    scene.add(grenade);
+
+    const vel = dir.clone().multiplyScalar(12);
+    vel.y += 4;
+    let time = 0;
+
+    const animate = () => {
+      time += 0.016;
+      vel.y -= 15 * 0.016;
+      grenade.position.addScaledVector(vel, 0.016);
+
+      if (grenade.position.y <= 0.1 || time >= 1) {
+        const flashGeo = new THREE.SphereGeometry(0.3, 8, 6);
+        const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const flash = new THREE.Mesh(flashGeo, flashMat);
+        flash.position.copy(grenade.position);
+        scene.add(flash);
+        scene.remove(grenade);
+        setTimeout(() => scene.remove(flash), 150);
+        return;
+      }
+      requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }
+
   let frozen = false;
+  let pulled = false;
 
   function applyPull(data) {
     Audio.play('bishopSpell');
+    pulled = true;
     const bishopPos = new THREE.Vector3(data.x, data.y, data.z);
     const pullSpeed = 8;
     const pullDuration = 3000;
@@ -673,6 +720,7 @@ const FPSAbilities = (() => {
       if (elapsed >= pullDuration) {
         clearInterval(pullInterval);
         showPullOverlay(false);
+        pulled = false;
         return;
       }
 
@@ -684,6 +732,7 @@ const FPSAbilities = (() => {
       if (dist < 2) {
         clearInterval(pullInterval);
         showPullOverlay(false);
+        pulled = false;
         return;
       }
 
@@ -758,10 +807,11 @@ const FPSAbilities = (() => {
       Audio.play('whoosh');
       const overlay = document.getElementById('freeze-overlay');
       if (overlay) overlay.remove();
-    }, 1000);
+    }, 2500);
   }
 
   function isFrozen() { return frozen; }
+  function isPulled() { return pulled; }
 
   function launchRingOfFire() {
     const scene = FPSRenderer.getScene();
@@ -853,14 +903,16 @@ const FPSAbilities = (() => {
           const colliders = FPSArena.getColliders();
           const dirToPlayer = new THREE.Vector2(
             myPos.x - origin.x, myPos.z - origin.z
-          ).normalize();
+          );
+          const distToPlayer = dirToPlayer.length();
+          dirToPlayer.normalize();
 
-          for (const c of colliders) {
-            const steps = 5;
-            for (let s = 0; s < steps; s++) {
-              const t = (currentRadius - 2) + (s / steps) * 4;
-              const checkX = origin.x + dirToPlayer.x * t;
-              const checkZ = origin.z + dirToPlayer.y * t;
+          const steps = Math.max(10, Math.ceil(distToPlayer));
+          for (let s = 0; s <= steps && !blocked; s++) {
+            const t = (s / steps) * distToPlayer;
+            const checkX = origin.x + dirToPlayer.x * t;
+            const checkZ = origin.z + dirToPlayer.y * t;
+            for (const c of colliders) {
               if (checkX > c.minX && checkX < c.maxX &&
                   checkZ > c.minZ && checkZ < c.maxZ &&
                   origin.y < c.maxY && origin.y + ringHeight > c.minY) {
@@ -868,7 +920,6 @@ const FPSAbilities = (() => {
                 break;
               }
             }
-            if (blocked) break;
           }
 
           if (!blocked) {
@@ -912,6 +963,7 @@ const FPSAbilities = (() => {
     disarmed = false;
     flashed = false;
     frozen = false;
+    pulled = false;
     passiveState = {};
     hideFlashOverlay();
     showDisarmOverlay(false);
@@ -926,7 +978,7 @@ const FPSAbilities = (() => {
 
   return {
     init, update, tryUlt, onOpponentAbility, onOpponentEffect,
-    processDamage, isDisarmed, isFlashed, isFrozen, isKnightUltActive, consumeKnightUlt,
+    processDamage, isDisarmed, isFlashed, isFrozen, isPulled, isKnightUltActive, consumeKnightUlt,
     canBishopResurrect, useBishopResurrect, setSelfDamageCallback,
     getPieceType, cleanup,
   };

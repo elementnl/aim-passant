@@ -95,22 +95,26 @@ const FPS = (() => {
 
     const onContextMenu = (e) => e.preventDefault();
 
-    const onKeyDown = (e) => {
-      if (!active) return;
-      if (e.key === 'Escape' && !FPSInput.isPointerLocked()) {
-        toggleDuelPause();
+    const onPointerLockChange = () => {
+      if (!active || !duelReady) return;
+      if (!FPSInput.isPointerLocked()) {
+        document.getElementById('duel-pause').classList.remove('hidden');
       }
     };
 
     canvas.addEventListener('mousedown', onMouseDown);
     canvas.addEventListener('mouseup', onMouseUp);
     canvas.addEventListener('contextmenu', onContextMenu);
-    document.addEventListener('keydown', onKeyDown);
-    canvas._duelHandlers = { onMouseDown, onMouseUp, onContextMenu, onKeyDown };
+    document.addEventListener('pointerlockchange', onPointerLockChange);
+    canvas._duelHandlers = { onMouseDown, onMouseUp, onContextMenu, onPointerLockChange };
 
     document.getElementById('btn-duel-resume').onclick = () => {
-      toggleDuelPause();
-      FPSInput.requestPointerLock();
+      document.getElementById('duel-pause').classList.add('hidden');
+      try {
+        canvas.requestPointerLock({ unadjustedMovement: true });
+      } catch {
+        canvas.requestPointerLock();
+      }
     };
     document.getElementById('btn-duel-settings').onclick = () => {
       document.getElementById('settings-modal').classList.remove('hidden');
@@ -186,10 +190,13 @@ const FPS = (() => {
 
     if (duelReady && !dying) {
       const isFrozen = FPSAbilities.isFrozen();
-      if (!isFrozen) {
-        FPSPlayer.update(dt, myStats.speed);
-      } else {
+      const isPulled = FPSAbilities.isPulled();
+      if (isFrozen) {
         FPSInput.consumeMouse();
+      } else if (isPulled) {
+        FPSPlayer.update(dt, 0);
+      } else {
+        FPSPlayer.update(dt, myStats.speed);
       }
       if (FPSInput.isDown('r')) FPSShooting.tryReload();
       if (FPSInput.isDown('q') && !isFrozen) FPSAbilities.tryUlt();
@@ -312,8 +319,8 @@ const FPS = (() => {
       canvas.removeEventListener('mousedown', canvas._duelHandlers.onMouseDown);
       canvas.removeEventListener('mouseup', canvas._duelHandlers.onMouseUp);
       canvas.removeEventListener('contextmenu', canvas._duelHandlers.onContextMenu);
-      if (canvas._duelHandlers.onKeyDown) {
-        document.removeEventListener('keydown', canvas._duelHandlers.onKeyDown);
+      if (canvas._duelHandlers.onPointerLockChange) {
+        document.removeEventListener('pointerlockchange', canvas._duelHandlers.onPointerLockChange);
       }
       delete canvas._duelHandlers;
     }

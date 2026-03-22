@@ -26,7 +26,7 @@ const FPSShooting = (() => {
     minigun: { perShot: 0.003, max: 0.06,  decay: 0.03,  recoilUp: 0.002, recoilSide: 0.003 },
   };
   const BASE_CROSSHAIR_SIZE = {
-    pistol: 24, bow: 22, shotgun: 110, sniper: 80, ar: 24, deagle: 26, minigun: 30,
+    pistol: 24, bow: 22, shotgun: 110, sniper: 360, ar: 24, deagle: 26, minigun: 30,
   };
 
   const BULLET_SPEED = 80;
@@ -345,7 +345,8 @@ const FPSShooting = (() => {
       let spread = FPSGun.getIsADS() ? 0 : weapon.unscopedSpread;
       if (!FPSPlayer.isOnGround()) spread = weapon.jumpingSpread || spread * 2;
       const scopedAssist = FPSGun.getIsADS() ? (weapon.scopedAimAssist || 0) : 0;
-      fireBullet(camera, opponentMesh, weapon.damage, spread, coverMeshes, scopedAssist);
+      const sniperBloomMult = FPSGun.getIsADS() ? 0 : 1;
+      fireBullet(camera, opponentMesh, weapon.damage, spread, coverMeshes, scopedAssist, sniperBloomMult);
       if (ammo > 0) {
         boltPending = true;
         setTimeout(() => {
@@ -650,9 +651,19 @@ const FPSShooting = (() => {
     if (Math.abs(recoilOffsetY) < 0.0001) recoilOffsetY = 0;
 
     const crosshair = getCrosshair();
+    if (!crosshair) return;
     const baseSize = BASE_CROSSHAIR_SIZE[weapon ? weapon.type : ''] || 24;
     const expandPx = bloom * 800;
-    const newSize = baseSize + expandPx;
+
+    let movementExpand = 0;
+    if (weapon && weapon.type !== 'bow') {
+      const isMoving = FPSInput.isDown('w') || FPSInput.isDown('a') || FPSInput.isDown('s') || FPSInput.isDown('d');
+      const isJumping = !FPSPlayer.isOnGround();
+      if (isJumping) movementExpand = 15;
+      else if (isMoving) movementExpand = 6;
+    }
+
+    const newSize = baseSize + expandPx + movementExpand;
     crosshair.style.width = newSize + 'px';
     crosshair.style.height = newSize + 'px';
 

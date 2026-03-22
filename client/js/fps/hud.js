@@ -84,20 +84,21 @@ const FPSHUD = (() => {
   }
 
   function showScope(show, type) {
-    const sniper = document.getElementById('scope-overlay');
-    const reddot = document.getElementById('reddot-overlay');
-    const crosshair = document.getElementById('crosshair');
-    sniper.classList.add('hidden');
-    reddot.classList.add('hidden');
+    const isPG = document.getElementById('screen-playground')?.classList.contains('active');
+    const sniper = document.getElementById(isPG ? 'pg-scope' : 'scope-overlay');
+    const reddot = document.getElementById(isPG ? 'pg-reddot' : 'reddot-overlay');
+    const crosshair = document.getElementById(isPG ? 'crosshair-pg' : 'crosshair');
+    if (sniper) sniper.classList.add('hidden');
+    if (reddot) reddot.classList.add('hidden');
 
     if (show && type === 'sniper') {
-      sniper.classList.remove('hidden');
-      crosshair.classList.add('hidden');
+      if (sniper) sniper.classList.remove('hidden');
+      if (crosshair) crosshair.classList.add('hidden');
     } else if (show && type === 'reddot') {
-      reddot.classList.remove('hidden');
-      crosshair.classList.add('hidden');
+      if (reddot) reddot.classList.remove('hidden');
+      if (crosshair) crosshair.classList.add('hidden');
     } else {
-      crosshair.classList.remove('hidden');
+      if (crosshair) crosshair.classList.remove('hidden');
     }
   }
 
@@ -143,22 +144,31 @@ const FPSHUD = (() => {
   }
 
   const ULT_NAMES = {
-    p: 'Flashbang', n: 'Explosive Arrow', b: 'Disarm',
-    r: 'Invisibility', q: 'Fireball', k: 'Airstrike',
+    p: 'Flashbang', n: 'Explosive Arrow', b: 'Pull',
+    r: 'Freeze', q: 'Ring of Fire', k: 'Airstrike',
   };
 
+  function getUltElements() {
+    const isPG = document.getElementById('screen-playground')?.classList.contains('active');
+    return {
+      key: document.getElementById(isPG ? 'pg-ult-key' : 'ult-key'),
+      status: document.getElementById(isPG ? 'pg-ult-status' : 'ult-status'),
+      timer: document.getElementById(isPG ? 'pg-ult-timer' : 'ult-timer'),
+    };
+  }
+
   function initAbilityHUD(pieceType) {
-    const status = document.getElementById('ult-status');
+    const { key, status, timer } = getUltElements();
+    if (!status) return;
     status.textContent = ULT_NAMES[pieceType] || 'ULTIMATE';
     status.classList.remove('ready');
-    document.getElementById('ult-key').classList.remove('ready');
-    document.getElementById('ult-timer').textContent = '';
+    if (key) key.classList.remove('ready');
+    if (timer) timer.textContent = '';
   }
 
   function updateAbilityHUD(ultReady, ultCooldownEnd, now) {
-    const key = document.getElementById('ult-key');
-    const status = document.getElementById('ult-status');
-    const timer = document.getElementById('ult-timer');
+    const { key, status, timer } = getUltElements();
+    if (!key) return;
 
     if (ultReady) {
       key.classList.add('ready');

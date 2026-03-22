@@ -68,6 +68,10 @@ const Lobby = (() => {
       window.location.reload();
     });
 
+    document.getElementById('btn-chess-leave').addEventListener('click', () => {
+      if (confirm('Leave the match?')) window.location.reload();
+    });
+
     document.getElementById('btn-playground').addEventListener('click', () => {
       LobbyBG.stop();
       Playground.start();
