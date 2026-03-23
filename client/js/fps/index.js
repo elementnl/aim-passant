@@ -12,6 +12,8 @@ const FPS = (() => {
   let mouseDown = false;
 
   let coverMeshes = [];
+  let opMinigunLoop = null;
+  let opMinigunTimeout = null;
 
   function init() {
     const canvas = document.getElementById('duel-canvas');
@@ -154,7 +156,19 @@ const FPS = (() => {
     Network.on('duel-opponent-shoot', (data) => {
       FPSShooting.showOpponentTracer(FPSRenderer.getScene(), data);
       const opWeapon = PIECE_STATS[_opponentPiece]?.weapon;
-      if (opWeapon && opWeapon.sounds && opWeapon.sounds.fire) {
+      if (!opWeapon || !opWeapon.sounds || !opWeapon.sounds.fire) return;
+
+      if (opWeapon.type === 'minigun') {
+        if (!opMinigunLoop) {
+          opMinigunLoop = Audio.play('minigunFire');
+          if (opMinigunLoop) opMinigunLoop.loop = true;
+        }
+        clearTimeout(opMinigunTimeout);
+        opMinigunTimeout = setTimeout(() => {
+          if (opMinigunLoop) { opMinigunLoop.pause(); opMinigunLoop = null; }
+          Audio.play('minigunWinddown');
+        }, 200);
+      } else {
         Audio.play(opWeapon.sounds.fire);
       }
     });
@@ -372,6 +386,9 @@ const FPS = (() => {
     Audio.stopMusic();
     Audio.stop('minigunFire');
     Audio.stop('minigunSpinup');
+    if (opMinigunLoop) { opMinigunLoop.pause(); opMinigunLoop = null; }
+    clearTimeout(opMinigunTimeout);
+    opMinigunTimeout = null;
     FPSShooting.reset();
     KillFeed.clear();
     FPSAbilities.cleanup();

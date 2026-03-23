@@ -6,6 +6,7 @@ function initChessGame(room) {
   room.state = 'chess';
   room.capturedPieces = { white: [], black: [] };
   room.pieceHP = initPieceHP(room.chess);
+  room.lastMove = null;
   return getChessState(room);
 }
 
@@ -27,12 +28,10 @@ function initPieceHP(chess) {
 }
 
 function getChessState(room) {
-  const history = room.chess.history({ verbose: true });
-  const last = history.length > 0 ? history[history.length - 1] : null;
   return {
     fen: room.chess.fen(),
     turn: room.chess.turn() === 'w' ? 'white' : 'black',
-    lastMove: last ? { from: last.from, to: last.to } : null,
+    lastMove: room.lastMove || null,
     isCheck: room.chess.isCheck(),
     isCheckmate: false,
     isStalemate: false,
@@ -101,6 +100,7 @@ function makeMove(room, from, to, promotion) {
 
       room.pieceHP[to] = room.pieceHP[from];
       delete room.pieceHP[from];
+      room.lastMove = { from, to };
 
       return { duel: false, move: { from, to }, state: getChessState(room) };
     }
@@ -138,6 +138,7 @@ function makeMove(room, from, to, promotion) {
 
   room.pieceHP[to] = room.pieceHP[from];
   delete room.pieceHP[from];
+  room.lastMove = { from, to };
 
   if (move.flags.includes('k')) {
     const rank = move.color === 'w' ? '1' : '8';
@@ -157,6 +158,7 @@ function resolveDuel(room, winner, pendingMove, winnerHP) {
   const { from, to, promotion } = pendingMove;
   const attackerPiece = chess.get(from);
   const defenderPiece = chess.get(to);
+  room.lastMove = { from, to };
 
   if (winner === 'attacker') {
     const kingCaptured = defenderPiece && defenderPiece.type === 'k';
@@ -169,7 +171,7 @@ function resolveDuel(room, winner, pendingMove, winnerHP) {
       room.pieceHP[to] = winnerHP;
       return {
         winner: 'attacker',
-        state: { fen: chess.fen(), turn: colorName(chess.turn()), capturedPieces: room.capturedPieces, pieceHP: room.pieceHP },
+        state: { fen: chess.fen(), turn: colorName(chess.turn()), lastMove: room.lastMove, capturedPieces: room.capturedPieces, pieceHP: room.pieceHP },
         kingCaptured: true,
         capturedKingColor: colorName(defenderPiece.color),
       };
@@ -200,7 +202,7 @@ function resolveDuel(room, winner, pendingMove, winnerHP) {
     room.pieceHP[to] = winnerHP;
     return {
       winner: 'defender',
-      state: { fen: chess.fen(), turn: colorName(chess.turn()), capturedPieces: room.capturedPieces, pieceHP: room.pieceHP },
+      state: { fen: chess.fen(), turn: colorName(chess.turn()), lastMove: room.lastMove, capturedPieces: room.capturedPieces, pieceHP: room.pieceHP },
       kingCaptured: true,
       capturedKingColor: colorName(attackerPiece.color),
     };

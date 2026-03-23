@@ -812,7 +812,7 @@ body {
 }
 
 .chess-square.last-move {
-  background: rgba(100, 160, 80, 0.35) !important;
+  background: rgba(160, 210, 100, 0.4) !important;
 }
 
 .chess-square.selected {
