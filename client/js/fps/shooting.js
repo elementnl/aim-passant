@@ -125,6 +125,7 @@ const FPSShooting = (() => {
     if (!mouseHeld || (!isPlayground() && FPSAbilities.isDisarmed())) return;
     if (weapon.type === 'minigun') {
       if (isReloading || FPSGun.isReloading()) return;
+      if (ammo <= 0 && !minigunSpunUp) return;
       const elapsed = performance.now() - minigunSpinStart;
       if (!minigunSpunUp && elapsed >= (weapon.spinupTime || 500)) {
         minigunSpunUp = true;
@@ -178,7 +179,7 @@ const FPSShooting = (() => {
 
     const chargePercent = Math.min(chargeTime / weapon.chargeTime, 1);
     const isExplosive = checkKnightUlt();
-    const damage = isExplosive ? 150 : weapon.damageMin + (weapon.damageMax - weapon.damageMin) * chargePercent;
+    const damage = isExplosive ? 75 : weapon.damageMin + (weapon.damageMax - weapon.damageMin) * chargePercent;
 
     FPSGun.bowRelease();
     Audio.stop('knightUltCharge');

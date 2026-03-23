@@ -5,6 +5,8 @@ const ChessUI = (() => {
   let validMoves = [];
   let isMyTurn = false;
   let pieceHP = {};
+  let lastMoveFrom = null;
+  let lastMoveTo = null;
 
   const PIECE_CHARS = {
     k: '\u265A', q: '\u265B', r: '\u265C', b: '\u265D', n: '\u265E', p: '\u265F',
@@ -20,6 +22,10 @@ const ChessUI = (() => {
     fen = chessState.fen;
     isMyTurn = chessState.turn === myColor;
     pieceHP = chessState.pieceHP || {};
+    if (chessState.lastMove) {
+      lastMoveFrom = chessState.lastMove.from;
+      lastMoveTo = chessState.lastMove.to;
+    }
     selectedSquare = null;
     validMoves = [];
     renderBoard();
@@ -55,7 +61,38 @@ const ChessUI = (() => {
   function getMovesFrom(square) {
     try {
       const chess = new Chess(fen);
-      return chess.moves({ square, verbose: true }).map(m => m.to);
+      const legalMoves = chess.moves({ square, verbose: true }).map(m => m.to);
+
+      const piece = chess.get(square);
+      if (!piece) return legalMoves;
+
+      const allSquares = [];
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          allSquares.push(String.fromCharCode(97 + c) + (r + 1));
+        }
+      }
+
+      const extraMoves = [];
+      for (const target of allSquares) {
+        if (legalMoves.includes(target)) continue;
+        try {
+          const testChess = new Chess(fen);
+          const m = testChess.move({ from: square, to: target, promotion: 'q' });
+          if (m) extraMoves.push(target);
+        } catch {
+          try {
+            const fenParts = fen.split(' ');
+            fenParts[1] = piece.color;
+            const modFen = fenParts.join(' ');
+            const testChess2 = new Chess(modFen);
+            const m2 = testChess2.move({ from: square, to: target, promotion: 'q' });
+            if (m2) extraMoves.push(target);
+          } catch {}
+        }
+      }
+
+      return [...new Set([...legalMoves, ...extraMoves])];
     } catch { return []; }
   }
 
@@ -100,6 +137,7 @@ const ChessUI = (() => {
           }
         }
 
+        if (square === lastMoveFrom || square === lastMoveTo) el.classList.add('last-move');
         if (selectedSquare === square) el.classList.add('selected');
         if (validMoves.includes(square)) {
           el.classList.add(cell ? 'valid-capture' : 'valid-move');
@@ -145,7 +183,8 @@ const ChessUI = (() => {
     if (cell && cell.piece === 'p') {
       const toRow = parseInt(to[1]);
       if ((cell.color === 'w' && toRow === 8) || (cell.color === 'b' && toRow === 1)) {
-        promotion = 'q';
+        promotion = await showPromotionPicker();
+        if (!promotion) { renderBoard(); return; }
       }
     }
 
@@ -157,6 +196,55 @@ const ChessUI = (() => {
       validMoves = [];
       renderBoard();
     }
+  }
+
+  function showPromotionPicker() {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText =
+        'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);' +
+        'display:flex;align-items:center;justify-content:center;z-index:100;';
+
+      const box = document.createElement('div');
+      box.style.cssText =
+        'background:#111;border:1px solid #333;padding:1rem 1.5rem;text-align:center;';
+
+      const label = document.createElement('div');
+      label.textContent = 'Promote to:';
+      label.style.cssText = 'color:#888;font-size:0.8rem;margin-bottom:0.75rem;letter-spacing:1px;';
+      box.appendChild(label);
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:0.5rem;';
+
+      const options = [
+        { piece: 'q', char: '\u265B', name: 'Queen' },
+        { piece: 'r', char: '\u265C', name: 'Rook' },
+        { piece: 'b', char: '\u265D', name: 'Bishop' },
+        { piece: 'n', char: '\u265E', name: 'Knight' },
+      ];
+
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.textContent = opt.char;
+        btn.title = opt.name;
+        btn.style.cssText =
+          'font-size:2rem;width:3rem;height:3rem;background:rgba(255,255,255,0.08);' +
+          'border:1px solid #444;color:#fff;cursor:pointer;display:flex;align-items:center;' +
+          'justify-content:center;font-family:inherit;';
+        btn.addEventListener('mouseenter', () => { btn.style.background = 'rgba(255,255,255,0.2)'; });
+        btn.addEventListener('mouseleave', () => { btn.style.background = 'rgba(255,255,255,0.08)'; });
+        btn.addEventListener('click', () => {
+          overlay.remove();
+          resolve(opt.piece);
+        });
+        row.appendChild(btn);
+      });
+
+      box.appendChild(row);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+    });
   }
 
   function updateTurnIndicator(state) {
@@ -171,10 +259,15 @@ const ChessUI = (() => {
   }
 
   function updateCapturedPieces(captured) {
-    document.getElementById('captured-white').textContent =
-      captured.white.map(p => PIECE_CHARS[p]).join(' ');
-    document.getElementById('captured-black').textContent =
-      captured.black.map(p => PIECE_CHARS[p]).join(' ');
+    const topEl = document.getElementById('captured-white');
+    const botEl = document.getElementById('captured-black');
+    if (myColor === 'white') {
+      topEl.textContent = captured.white.map(p => PIECE_CHARS[p]).join(' ');
+      botEl.textContent = captured.black.map(p => PIECE_CHARS[p]).join(' ');
+    } else {
+      topEl.textContent = captured.black.map(p => PIECE_CHARS[p]).join(' ');
+      botEl.textContent = captured.white.map(p => PIECE_CHARS[p]).join(' ');
+    }
   }
 
   return { init, update };

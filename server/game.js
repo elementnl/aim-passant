@@ -27,14 +27,17 @@ function initPieceHP(chess) {
 }
 
 function getChessState(room) {
+  const history = room.chess.history({ verbose: true });
+  const last = history.length > 0 ? history[history.length - 1] : null;
   return {
     fen: room.chess.fen(),
     turn: room.chess.turn() === 'w' ? 'white' : 'black',
+    lastMove: last ? { from: last.from, to: last.to } : null,
     isCheck: room.chess.isCheck(),
-    isCheckmate: room.chess.isCheckmate(),
-    isStalemate: room.chess.isStalemate(),
+    isCheckmate: false,
+    isStalemate: false,
     isDraw: room.chess.isDraw(),
-    isGameOver: room.chess.isGameOver(),
+    isGameOver: false,
     capturedPieces: room.capturedPieces,
     pieceHP: room.pieceHP,
   };
@@ -50,8 +53,60 @@ function makeMove(room, from, to, promotion) {
 
   if (!movingPiece) return { error: 'No piece at source square' };
 
-  const move = chess.move({ from, to, promotion: promotion || undefined });
-  if (!move) return { error: 'Invalid move' };
+  let move = chess.move({ from, to, promotion: promotion || undefined });
+
+  if (!move) {
+    const targetPiece = chess.get(to);
+    if (targetPiece && targetPiece.color !== movingPiece.color) {
+      const capturedType = targetPiece.type;
+      const capturedColor = targetPiece.color;
+
+      const attackerHP = room.pieceHP[from] || PIECE_STATS[movingPiece.type].hp;
+      const defenderHP = room.pieceHP[to] || PIECE_STATS[capturedType].hp;
+
+      return {
+        duel: true,
+        move: { from, to, promotion },
+        attacker: {
+          piece: movingPiece.type,
+          color: colorName(movingPiece.color),
+          square: from,
+          stats: { ...PIECE_STATS[movingPiece.type] },
+          currentHP: attackerHP,
+        },
+        defender: {
+          piece: capturedType,
+          color: colorName(capturedColor),
+          square: to,
+          stats: { ...PIECE_STATS[capturedType] },
+          currentHP: defenderHP,
+        },
+      };
+    }
+
+    if (movingPiece) {
+      chess.remove(from);
+      const putPiece = promotion
+        ? { type: promotion, color: movingPiece.color }
+        : movingPiece;
+      chess.put(putPiece, to);
+
+      const fen = chess.fen();
+      const parts = fen.split(' ');
+      parts[1] = parts[1] === 'w' ? 'b' : 'w';
+      parts[3] = '-';
+      parts[4] = '0';
+      if (parts[1] === 'w') parts[5] = String(parseInt(parts[5]) + 1);
+      try { chess.load(parts.join(' ')); } catch { return { error: 'Invalid move' }; }
+
+      room.pieceHP[to] = room.pieceHP[from];
+      delete room.pieceHP[from];
+
+      return { duel: false, move: { from, to }, state: getChessState(room) };
+    }
+
+    return { error: 'Invalid move' };
+  }
 
   if (move.captured) {
     const capturedType = move.captured;

@@ -811,6 +811,10 @@ body {
   text-shadow: none;
 }
 
+.chess-square.last-move {
+  background: rgba(100, 160, 80, 0.35) !important;
+}
+
 .chess-square.selected {
   background: #f7ec5a !important;
 }

@@ -230,6 +230,22 @@ const FPSAbilities = (() => {
       spawnBishopBeamFromOpponent();
     }
 
+    if (effect === 'bishopResurrect') {
+      Audio.play('bishopResurrect');
+      const opMesh = FPSOpponent.getMesh();
+      if (opMesh) {
+        FPSEffects.explode(FPSRenderer.getScene(), opMesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0x9944ff);
+      }
+      const msg = document.createElement('div');
+      msg.style.cssText =
+        'position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);' +
+        'color:#bb88ff;font-size:1.5rem;font-weight:bold;z-index:55;' +
+        'pointer-events:none;text-shadow:0 0 20px rgba(155,89,182,0.6);letter-spacing:3px;';
+      msg.textContent = 'OPPONENT RESURRECTING...';
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 3000);
+    }
+
     if (effect === 'pull') {
       applyPull(data);
     }
@@ -851,7 +867,7 @@ const FPSAbilities = (() => {
       Audio.play('whoosh');
       const overlay = document.getElementById('freeze-overlay');
       if (overlay) overlay.remove();
-    }, 2500);
+    }, 2000);
   }
 
   function isFrozen() { return frozen; }

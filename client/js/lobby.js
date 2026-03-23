@@ -72,6 +72,10 @@ const Lobby = (() => {
       if (confirm('Leave the match?')) window.location.reload();
     });
 
+    document.getElementById('btn-chess-settings').addEventListener('click', () => {
+      document.getElementById('settings-modal').classList.remove('hidden');
+    });
+
     document.getElementById('btn-playground').addEventListener('click', () => {
       LobbyBG.stop();
       Playground.start();

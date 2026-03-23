@@ -153,6 +153,10 @@ const FPS = (() => {
     });
     Network.on('duel-opponent-shoot', (data) => {
       FPSShooting.showOpponentTracer(FPSRenderer.getScene(), data);
+      const opWeapon = PIECE_STATS[_opponentPiece]?.weapon;
+      if (opWeapon && opWeapon.sounds && opWeapon.sounds.fire) {
+        Audio.play(opWeapon.sounds.fire);
+      }
     });
     Network.on('duel-take-damage', onTakeDamage);
     Network.on('duel-opponent-ability', (data) => FPSAbilities.onOpponentAbility(data));
@@ -295,16 +299,48 @@ const FPS = (() => {
 
   function handleBishopResurrect() {
     FPSAbilities.useBishopResurrect();
-    myHP = 40;
+    myHP = 0;
+    dying = true;
     Audio.play('bishopResurrect');
     Network.emit('duel-ability-effect', { effect: 'bishopResurrect' });
 
-    const half = FPSConfig.ARENA_SIZE / 2 - 2;
-    const x = (Math.random() - 0.5) * 2 * half;
-    const z = (Math.random() - 0.5) * 2 * half;
+    FPSEffects.explode(FPSRenderer.getScene(), FPSPlayer.position.clone(), 0x9944ff);
 
-    FPSPlayer.spawn({ x, z, yaw: Math.random() * Math.PI * 2 });
-    FPSHUD.updateHealth(myHP, myMaxHP);
+    const overlay = document.createElement('div');
+    overlay.id = 'bishop-respawn-overlay';
+    overlay.style.cssText =
+      'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);' +
+      'display:flex;align-items:center;justify-content:center;z-index:55;pointer-events:none;';
+    const text = document.createElement('div');
+    text.style.cssText =
+      'color:#bb88ff;font-size:2rem;font-weight:bold;letter-spacing:4px;' +
+      'text-shadow:0 0 30px rgba(155,89,182,0.6);font-family:Bigshot One,cursive;';
+    text.textContent = 'RESURRECTING...';
+    overlay.appendChild(text);
+    document.body.appendChild(overlay);
+
+    let countdown = 3;
+    const countInterval = setInterval(() => {
+      countdown--;
+      if (countdown > 0) {
+        text.textContent = `RESURRECTING... ${countdown}`;
+      }
+    }, 1000);
+
+    setTimeout(() => {
+      clearInterval(countInterval);
+      overlay.remove();
+
+      myHP = 40;
+      dying = false;
+
+      const half = (FPSArena.getArenaSize ? FPSArena.getArenaSize() : FPSConfig.ARENA_SIZE) / 2 - 2;
+      const x = (Math.random() - 0.5) * 2 * half;
+      const z = (Math.random() - 0.5) * 2 * half;
+
+      FPSPlayer.spawn({ x, z, yaw: Math.random() * Math.PI * 2 });
+      FPSHUD.updateHealth(myHP, myMaxHP);
+    }, 3000);
   }
 
   function showDeathExplosion(loserIsMe) {
