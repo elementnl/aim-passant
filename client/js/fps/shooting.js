@@ -179,7 +179,7 @@ const FPSShooting = (() => {
 
     const chargePercent = Math.min(chargeTime / weapon.chargeTime, 1);
     const isExplosive = checkKnightUlt();
-    const damage = isExplosive ? 75 : weapon.damageMin + (weapon.damageMax - weapon.damageMin) * chargePercent;
+    const damage = isExplosive ? 53 : weapon.damageMin + (weapon.damageMax - weapon.damageMin) * chargePercent;
 
     FPSGun.bowRelease();
     Audio.stop('knightUltCharge');

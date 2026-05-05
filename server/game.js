@@ -27,12 +27,20 @@ function initPieceHP(chess) {
   return hp;
 }
 
+function isColorInCheck(chess, colorChar) {
+  if (chess.turn() === colorChar) return chess.isCheck();
+  const parts = chess.fen().split(' ');
+  parts[1] = colorChar;
+  try { return new Chess(parts.join(' ')).isCheck(); } catch { return false; }
+}
+
 function getChessState(room) {
   return {
     fen: room.chess.fen(),
     turn: room.chess.turn() === 'w' ? 'white' : 'black',
     lastMove: room.lastMove || null,
-    isCheck: room.chess.isCheck(),
+    whiteInCheck: isColorInCheck(room.chess, 'w'),
+    blackInCheck: isColorInCheck(room.chess, 'b'),
     isCheckmate: false,
     isStalemate: false,
     isDraw: room.chess.isDraw(),
@@ -52,7 +60,12 @@ function makeMove(room, from, to, promotion) {
 
   if (!movingPiece) return { error: 'No piece at source square' };
 
-  let move = chess.move({ from, to, promotion: promotion || undefined });
+  let move;
+  try {
+    move = chess.move({ from, to, promotion: promotion || undefined });
+  } catch {
+    move = null;
+  }
 
   if (!move) {
     const targetPiece = chess.get(to);
@@ -177,7 +190,18 @@ function resolveDuel(room, winner, pendingMove, winnerHP) {
       };
     }
 
-    chess.move({ from, to, promotion: promotion || undefined });
+    try {
+      chess.move({ from, to, promotion: promotion || undefined });
+    } catch {
+      chess.remove(from);
+      chess.remove(to);
+      chess.put({ type: promotion || attackerPiece.type, color: attackerPiece.color }, to);
+      const fenParts = chess.fen().split(' ');
+      fenParts[1] = fenParts[1] === 'w' ? 'b' : 'w';
+      fenParts[3] = '-'; fenParts[4] = '0';
+      if (fenParts[1] === 'w') fenParts[5] = String(parseInt(fenParts[5]) + 1);
+      try { chess.load(fenParts.join(' ')); } catch {}
+    }
     if (defenderPiece) {
       room.capturedPieces[colorName(defenderPiece.color)].push(defenderPiece.type);
     }

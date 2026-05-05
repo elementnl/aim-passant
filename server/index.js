@@ -32,7 +32,7 @@ app.use('/shared', express.static(path.join(__dirname, '..', 'shared')));
 
 registerSocketHandlers(io);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Aim Passant running on http://localhost:${PORT}`);
 });

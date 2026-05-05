@@ -58,41 +58,67 @@ const ChessUI = (() => {
     return String.fromCharCode(97 + col) + (8 - row);
   }
 
+  function hasBlocker(chess, fc, fr, tc, tr) {
+    const sc = Math.sign(tc - fc);
+    const sr = Math.sign(tr - fr);
+    let c = fc + sc, r = fr + sr;
+    while (c !== tc || r !== tr) {
+      if (chess.get(String.fromCharCode(97 + c) + (r + 1))) return true;
+      c += sc;
+      r += sr;
+    }
+    return false;
+  }
+
+  function pseudoCanReach(chess, piece, from, to) {
+    const fc = from.charCodeAt(0) - 97, fr = parseInt(from[1]) - 1;
+    const tc = to.charCodeAt(0) - 97,   tr = parseInt(to[1]) - 1;
+    const dc = tc - fc, dr = tr - fr;
+    const adc = Math.abs(dc), adr = Math.abs(dr);
+    const targetPiece = chess.get(to);
+
+    switch (piece.type) {
+      case 'p': {
+        const dir = piece.color === 'w' ? 1 : -1;
+        const startRank = piece.color === 'w' ? 1 : 6;
+        if (dc === 0 && dr === dir && !targetPiece) return true;
+        if (dc === 0 && dr === 2 * dir && fr === startRank) {
+          const midSq = String.fromCharCode(97 + fc) + (fr + dir + 1);
+          return !chess.get(midSq) && !targetPiece;
+        }
+        return adc === 1 && dr === dir && !!targetPiece;
+      }
+      case 'n': return (adc === 2 && adr === 1) || (adc === 1 && adr === 2);
+      case 'b': return adc === adr && adc > 0 && !hasBlocker(chess, fc, fr, tc, tr);
+      case 'r': return (dc === 0 || dr === 0) && (adc + adr > 0) && !hasBlocker(chess, fc, fr, tc, tr);
+      case 'q': return (dc === 0 || dr === 0 || adc === adr) && (adc + adr > 0) && !hasBlocker(chess, fc, fr, tc, tr);
+      case 'k': return adc <= 1 && adr <= 1 && (adc + adr > 0);
+    }
+    return false;
+  }
+
   function getMovesFrom(square) {
     try {
       const chess = new Chess(fen);
-      const legalMoves = chess.moves({ square, verbose: true }).map(m => m.to);
-
       const piece = chess.get(square);
-      if (!piece) return legalMoves;
+      if (!piece) return [];
 
-      const allSquares = [];
-      for (let r = 0; r < 8; r++) {
+      // Chess.js legal moves cover castling and en passant correctly.
+      const legal = chess.moves({ square, verbose: true }).map(m => m.to);
+
+      // Add pseudo-legal moves (geometrically valid, ignoring check constraints).
+      const pseudo = [];
+      for (let r = 1; r <= 8; r++) {
         for (let c = 0; c < 8; c++) {
-          allSquares.push(String.fromCharCode(97 + c) + (r + 1));
+          const target = String.fromCharCode(97 + c) + r;
+          if (target === square || legal.includes(target)) continue;
+          const tp = chess.get(target);
+          if (tp && tp.color === piece.color) continue;
+          if (pseudoCanReach(chess, piece, square, target)) pseudo.push(target);
         }
       }
 
-      const extraMoves = [];
-      for (const target of allSquares) {
-        if (legalMoves.includes(target)) continue;
-        try {
-          const testChess = new Chess(fen);
-          const m = testChess.move({ from: square, to: target, promotion: 'q' });
-          if (m) extraMoves.push(target);
-        } catch {
-          try {
-            const fenParts = fen.split(' ');
-            fenParts[1] = piece.color;
-            const modFen = fenParts.join(' ');
-            const testChess2 = new Chess(modFen);
-            const m2 = testChess2.move({ from: square, to: target, promotion: 'q' });
-            if (m2) extraMoves.push(target);
-          } catch {}
-        }
-      }
-
-      return [...new Set([...legalMoves, ...extraMoves])];
+      return [...new Set([...legal, ...pseudo])];
     } catch { return []; }
   }
 
@@ -249,8 +275,11 @@ const ChessUI = (() => {
 
   function updateTurnIndicator(state) {
     const el = document.getElementById('turn-indicator');
-    if (state.isCheck) {
-      el.textContent = `${state.turn.toUpperCase()}'s turn — CHECK!`;
+    const checks = [];
+    if (state.whiteInCheck) checks.push('White in CHECK!');
+    if (state.blackInCheck) checks.push('Black in CHECK!');
+    if (checks.length > 0) {
+      el.textContent = `${state.turn.toUpperCase()}'s turn — ${checks.join('  ')}`;
       el.style.color = '#c0392b';
     } else {
       el.textContent = `${state.turn.toUpperCase()}'s turn`;

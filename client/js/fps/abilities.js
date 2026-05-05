@@ -236,6 +236,7 @@ const FPSAbilities = (() => {
       if (opMesh) {
         FPSEffects.explode(FPSRenderer.getScene(), opMesh.position.clone().add(new THREE.Vector3(0, 0.8, 0)), 0x9944ff);
       }
+      FPSOpponent.hide();
       const msg = document.createElement('div');
       msg.style.cssText =
         'position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);' +
@@ -542,7 +543,7 @@ const FPSAbilities = (() => {
       const radius = 8;
       if (dist < radius) {
         const falloff = 1 - (dist / radius);
-        const damage = Math.round(180 * falloff);
+        const damage = Math.round(250 * falloff);
         if (damage > 0 && selfDamageCallback) {
           selfDamageCallback(damage);
         }
@@ -561,7 +562,7 @@ const FPSAbilities = (() => {
     const radius = 5;
     if (dist < radius) {
       if (selfDamageCallback) {
-        selfDamageCallback(150);
+        selfDamageCallback(105);
       }
     }
   }
@@ -610,7 +611,7 @@ const FPSAbilities = (() => {
       const radius = 8;
       if (dist < radius && selfDamageCallback) {
         const falloff = 1 - (dist / radius);
-        const damage = Math.round(180 * falloff);
+        const damage = Math.round(250 * falloff);
         if (damage > 0) selfDamageCallback(damage);
       }
     }, 1000);

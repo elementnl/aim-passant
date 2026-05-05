@@ -92,7 +92,16 @@ const FPSOpponent = (() => {
     }, 80);
   }
 
+  function hide() {
+    if (mesh) mesh.visible = false;
+    if (healthBarGroup) healthBarGroup.visible = false;
+  }
+
   function updateFromNetwork(data) {
+    if (mesh && !mesh.visible) {
+      mesh.visible = true;
+      if (healthBarGroup) healthBarGroup.visible = true;
+    }
     targetPos.set(data.x, data.y, data.z);
     rot.yaw = data.yaw;
   }
@@ -175,5 +184,5 @@ const FPSOpponent = (() => {
     }
   }
 
-  return { create, setHP, takeDamage, flashWhite, setVisible, setOutline, updateFromNetwork, forcePosition, interpolate, getMesh, destroy };
+  return { create, setHP, takeDamage, flashWhite, hide, setVisible, setOutline, updateFromNetwork, forcePosition, interpolate, getMesh, destroy };
 })();

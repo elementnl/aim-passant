@@ -292,6 +292,7 @@ const FPS = (() => {
   }
 
   function onTakeDamage({ damage, headshot }) {
+    if (dying) return;
     const processed = FPSAbilities.processDamage(damage, headshot);
     if (processed <= 0) return;
 
